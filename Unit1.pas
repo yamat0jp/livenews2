@@ -58,6 +58,7 @@ type
     function checkUserPassword(id: integer; password: string): Boolean;
     procedure createReaderId(Data: TJSONObject);
     procedure deleteReaderId(Data: TJSONObject);
+    procedure updateReaderId(Data: TJSONObject);
     procedure custData(id: integer; Data: TJSONObject);
     procedure custView(id: integer; out Data: TJSONObject);
     procedure deleteMagazine(id: integer);
@@ -202,9 +203,8 @@ end;
 procedure TDataModule1.deleteMagazine(id: integer);
   procedure main(DB: string);
   begin
-    FDQuery1.Open(Format('select * from %s where magId = :id;', [DB]));
-    FDQuery1.First;
-    while FDQuery1.Eof = false do
+    FDQuery1.Open(Format('select * from %s group by magId;', [DB]));
+    if FDQuery1.Locate('magid',id) = true then
       FDQuery1.Delete;
   end;
 
@@ -212,8 +212,6 @@ begin
   if mag.Locate('magId', id) = true then
   begin
     mag.Delete;
-    FDQuery1.Params.Clear;
-    FDQuery1.Params.ParamByName('id').AsInteger := id;
     main('news');
     main('database');
     main('indexTable');
@@ -249,21 +247,11 @@ end;
 procedure TDataModule1.deleteWriter(id: integer);
 var
   i: integer;
-  list: TList<integer>;
 begin
-  FDQuery1.SQL.Clear;
-  FDQuery1.SQL.Add('select * from maglist where userid = :id;');
-  FDQuery1.Params.ParamByName('id').AsInteger := id;
-  FDQuery1.Open;
-  list := TList<integer>.Create;
-  while FDQuery1.Eof = false do
-  begin
-    list.Add(FDQuery1.FieldByName('magid').AsInteger);
+  FDQuery1.Open('select * from maglist group by writerid;');
+  if FDQuery1.Locate('writerid',id) = true then
     FDQuery1.Delete;
-  end;
-  for i in list do
-    deleteMagazine(i);
-  list.Free;
+  deleteMagazine(i);
 end;
 
 procedure TDataModule1.readerData(id: integer; out Data: TJSONObject);
@@ -400,16 +388,24 @@ var
   js: TJSONObject;
   ar: TJSONArray;
   val: TJSONValue;
+  i: integer;
+  v: Variant;
 begin
   mag.First;
   ar := TJSONArray.Create;
+  FDQuery1.Open('select magId,COUNT(*) as count from indexTable group by magId');
   while mag.Eof = false do
   begin
+    i:=mag.FieldByName('magId').AsInteger;
+    v:=FDQuery1.Lookup('magId',i,'count');
+    if VarIsNull(v) = true then
+      v:=0;
     js := TJSONObject.Create;
     js.AddPair('magName', mag.FieldByName('magName').AsString);
     js.AddPair('comment', mag.FieldByName('comment').AsString);
     js.AddPair('day', mag.FieldByName('day').AsString);
     js.AddPair('lastDay', mag.FieldByName('lastDay').AsString);
+    js.AddPair('count',v);
     ar.Add(js);
     mag.Next;
   end;
@@ -538,19 +534,38 @@ begin
     end;
 end;
 
+procedure TDataModule1.updateReaderId(Data: TJSONObject);
+var
+  na, ma, pa: string;
+begin
+  na:=Data.Values['reader'].Value;
+  ma:=Data.Values['mail'].Value;
+  pa:=data.Values['password'].Value;
+  with reader do
+  begin
+    Edit;
+    FieldByName('reader').AsString:=na;
+    FieldByName('mail').AsString:=ma;
+    FieldByName('password').AsString:=pa;
+    Post;
+  end;
+end;
+
 procedure TDataModule1.updateWriterId(id: integer; Data: TJSONObject);
 var
   na, ma, pa: string;
 begin
-  na := Data.ParseJSONValue('writer').Value;
-  ma := Data.ParseJSONValue('mail').Value;
-  pa := Data.ParseJSONValue('password').Value;
-  with DataModule1.writer do
+  na := Data.Values['writer'].Value;
+  ma := Data.Values['mail'].Value;
+  pa := Data.Values['password'].Value;
+  with writer do
   begin
+    Edit;
     FieldByName('writerId').AsInteger := id;
     FieldByName('writer').AsString := na;
     FieldByName('mail').AsString := ma;
     FieldByName('password').AsString := pa;
+    Post;
   end;
 end;
 

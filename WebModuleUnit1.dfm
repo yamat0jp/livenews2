@@ -40,6 +40,11 @@ object WebModule1: TWebModule1
       Name = 'writeMag'
       PathInfo = '/writer/regist'
       OnAction = WebModule1writeMagAction
+    end
+    item
+      Name = 'writerTop'
+      PathInfo = '/writer/top'
+      OnAction = WebModule1writerTopAction
     end>
   Height = 225
   Width = 415
@@ -89,6 +94,7 @@ object WebModule1: TWebModule1
       '                <tr><td>{{comment}}</td></tr>'
       '                <tr><td>{{day}}</td></tr>'
       '                <tr><td>{{lastDay}}</td></tr>'
+      '                <tr><td>{{count}}</td></tr>'
       '                </table>'
       '        {{/enable}}'
       '    {{/items}}'
@@ -162,6 +168,9 @@ object WebModule1: TWebModule1
       '        <p>mail : {{mail}}<input type=text name=mail>'
       '        <p>password : ***<input type=password name=password>'
       '        <input type=submit>'
+      '        </form>'
+      '        <form method=delete action=/writer/data>'
+      '        <input type=submit value="'#36864#20250'">'
       '        </form>'
       '</body>'
       '</html>')

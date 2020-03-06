@@ -24,6 +24,8 @@ type
       Response: TWebResponse; var Handled: Boolean);
     procedure WebModule1detailAction(Sender: TObject; Request: TWebRequest;
       Response: TWebResponse; var Handled: Boolean);
+    procedure WebModule1writerTopAction(Sender: TObject; Request: TWebRequest;
+      Response: TWebResponse; var Handled: Boolean);
   private
     { private êÈåæ }
     writerId: integer;
@@ -75,6 +77,13 @@ var
   data: TJSONObject;
   num: TJSONNumber;
 begin
+  with Request.ContentFields do
+  begin
+    data := TJSONObject.Create;
+    data.AddPair('name', Values['reader']);
+    data.AddPair('mail', Values['mail']);
+    data.AddPair('password', Values['password']);
+  end;
   case Request.MethodType of
     mtGet:
       if readerId = 0 then
@@ -83,31 +92,21 @@ begin
         Exit;
       end;
     mtPut:
-      ;
+      if DataModule1.checkUserPassword(readerId, data.Values['password'].Value)
+        = true then
+        DataModule1.updateReaderId(data);
     mtPost:
-      with Request.ContentFields do
-      begin
-        data := TJSONObject.Create;
-        data.AddPair('mail', Values['mail']);
-        data.AddPair('password', Values['password']);
-        data.AddPair('name', Values['reader']);
-        DataModule1.createReaderId(data);
-        data.Free;
-      end;
+      DataModule1.createReaderId(data);
     mtDelete:
       with Request.ContentFields do
       begin
-        data := TJSONObject.Create;
         num := TJSONNumber.Create(readerId);
         data.AddPair('id', num);
-        data.AddPair('name', Values['reader']);
-        data.AddPair('mail', Values['mail']);
-        data.AddPair('password', Values['password']);
         DataModule1.deleteReaderId(data);
         num.Free;
-        data.Free;
       end;
   end;
+  data.Free;
   Response.ContentType := 'text/html;charset=utf-8';
   DataModule1.userView(readerId, data);
   mustache := TSynMustache.Parse(readerTop.Content);
@@ -150,6 +149,12 @@ procedure TWebModule1.WebModule1writerDataAction(Sender: TObject;
 var
   data: TJSONObject;
 begin
+  with Request.ContentFields do
+  begin
+    data := TJSONObject.Create;
+    data.AddPair('mail', Values['mail']);
+    data.AddPair('password', Values['password']);
+  end;
   case Request.MethodType of
     mtGet:
       if writerId = 0 then
@@ -158,28 +163,29 @@ begin
         Exit;
       end;
     mtPost:
-      with Request.ContentFields do
       begin
-        data := TJSONObject.Create;
-        data.AddPair('mail', Values['mail']);
-        data.AddPair('password', Values['password']);
-        data.AddPair('name', Values['writer']);
+        data.AddPair('name', Request.ContentFields.Values['writer']);
         DataModule1.createWriterId(data);
-        data.Free;
       end;
     mtPut:
-      begin
-        data := TJSONObject.Create;
-        with Request.ContentFields do
-        begin
-          data.AddPair('writer', Values['name']);
-          data.AddPair('mail', Values['mail']);
-          data.AddPair('password', Values['password']);
-        end;
-        DataModule1.updateWriterId(writerId, data);
-        data.Free;
-      end;
+      DataModule1.updateWriterId(writerId, data);
+    mtDelete:
+      DataModule1.deleteWriter(writerId);
   end;
+  data.Free;
+  data:=TJSONObject.Create;
+  DataModule1.custData(writerId,data);
+  Response.ContentType := 'text/html;charset=utf-8';
+  mustache := TSynMustache.Parse(writerData.Content);
+  Response.Content := mustache.RenderJSON(data.ToJSON);
+  data.Free;
+end;
+
+procedure TWebModule1.WebModule1writerTopAction(Sender: TObject;
+  Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
+var
+  data: TJSONObject;
+begin
   data := TJSONObject.Create;
   DataModule1.magazines(writerId, data);
   Response.ContentType := 'text/html;charset=utf-8';
