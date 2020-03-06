@@ -10,14 +10,9 @@ type
     top: TPageProducer;
     writerTop: TPageProducer;
     writerData: TPageProducer;
+    backnumber: TPageProducer;
     procedure WebModule1DefaultHandlerAction(Sender: TObject;
       Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
-    procedure WebModule1readerTopAction(Sender: TObject; Request: TWebRequest;
-      Response: TWebResponse; var Handled: Boolean);
-    procedure WebModule1registAction(Sender: TObject; Request: TWebRequest;
-      Response: TWebResponse; var Handled: Boolean);
-    procedure WebModule1writerTopAction(Sender: TObject; Request: TWebRequest;
-      Response: TWebResponse; var Handled: Boolean);
     procedure WebModuleCreate(Sender: TObject);
     procedure WebModule1writeMagAction(Sender: TObject; Request: TWebRequest;
       Response: TWebResponse; var Handled: Boolean);
@@ -25,10 +20,14 @@ type
       Response: TWebResponse; var Handled: Boolean);
     procedure WebModule1writerDataAction(Sender: TObject; Request: TWebRequest;
       Response: TWebResponse; var Handled: Boolean);
+    procedure WebModule1readerDataAction(Sender: TObject; Request: TWebRequest;
+      Response: TWebResponse; var Handled: Boolean);
+    procedure WebModule1detailAction(Sender: TObject; Request: TWebRequest;
+      Response: TWebResponse; var Handled: Boolean);
   private
     { private éŒ¾ }
     writerId: integer;
-    userId: integer;
+    readerId: integer;
   public
     { public éŒ¾ }
   end;
@@ -59,29 +58,33 @@ begin
   data.Free;
 end;
 
-procedure TWebModule1.WebModule1readerTopAction(Sender: TObject;
+procedure TWebModule1.WebModule1detailAction(Sender: TObject;
   Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
 var
   data: TJSONObject;
 begin
-  if userId = 0 then
-  begin
-    Handled := false;
-    Exit;
-  end;
+  DataModule1.backnumber(Request.QueryFields.Values['id'].ToInteger, data);
   Response.ContentType := 'text/html;charset=utf-8';
-  DataModule1.userView(userId, data);
-  mustache := TSynMustache.Parse(readerTop.Content);
-  Response.Content := mustache.RenderJSON(data.ToJSON);
+  mustache := TSynMustache.Parse(backnumber.Content);
+  Response.Content := mustache.RenderJSON(data.ToString);
 end;
 
-procedure TWebModule1.WebModule1registAction(Sender: TObject;
+procedure TWebModule1.WebModule1readerDataAction(Sender: TObject;
   Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
 var
   data: TJSONObject;
+  num: TJSONNumber;
 begin
   case Request.MethodType of
-    mtPOST:
+    mtGet:
+      if readerId = 0 then
+      begin
+        Handled := false;
+        Exit;
+      end;
+    mtPut:
+      ;
+    mtPost:
       with Request.ContentFields do
       begin
         data := TJSONObject.Create;
@@ -90,9 +93,25 @@ begin
         data.AddPair('name', Values['reader']);
         DataModule1.createReaderId(data);
         data.Free;
-        Response.SendRedirect('/reader/top');
+      end;
+    mtDelete:
+      with Request.ContentFields do
+      begin
+        data := TJSONObject.Create;
+        num := TJSONNumber.Create(readerId);
+        data.AddPair('id', num);
+        data.AddPair('name', Values['reader']);
+        data.AddPair('mail', Values['mail']);
+        data.AddPair('password', Values['password']);
+        DataModule1.deleteReaderId(data);
+        num.Free;
+        data.Free;
       end;
   end;
+  Response.ContentType := 'text/html;charset=utf-8';
+  DataModule1.userView(readerId, data);
+  mustache := TSynMustache.Parse(readerTop.Content);
+  Response.Content := mustache.RenderJSON(data.ToJSON);
 end;
 
 procedure TWebModule1.WebModule1selectionAction(Sender: TObject;
@@ -104,10 +123,10 @@ begin
   case Request.MethodType of
     mtGet:
       Handled := false;
-    mtPOST:
-      DataModule1.magIdOn(userId, id);
+    mtPost:
+      DataModule1.magIdOn(readerId, id);
     mtDelete:
-      DataModule1.magIdOff(userId, id);
+      DataModule1.magIdOff(readerId, id);
   end;
 end;
 
@@ -123,7 +142,7 @@ begin
   data.AddPair('enable', TJSONTrue.Create);
   DataModule1.createMagId(writerId, data);
   data.Free;
-  WebModule1writerTopAction(Sender, Request, Response, Handled);
+  Response.SendRedirect('/writer/data');
 end;
 
 procedure TWebModule1.WebModule1writerDataAction(Sender: TObject;
@@ -131,63 +150,47 @@ procedure TWebModule1.WebModule1writerDataAction(Sender: TObject;
 var
   data: TJSONObject;
 begin
-  if writerId > 0 then
-  begin
-    case Request.MethodType of
-      mtPOST:
+  case Request.MethodType of
+    mtGet:
+      if writerId = 0 then
+      begin
+        Handled := false;
+        Exit;
+      end;
+    mtPost:
+      with Request.ContentFields do
+      begin
+        data := TJSONObject.Create;
+        data.AddPair('mail', Values['mail']);
+        data.AddPair('password', Values['password']);
+        data.AddPair('name', Values['writer']);
+        DataModule1.createWriterId(data);
+        data.Free;
+      end;
+    mtPut:
+      begin
+        data := TJSONObject.Create;
         with Request.ContentFields do
         begin
-          data := TJSONObject.Create;
+          data.AddPair('writer', Values['name']);
           data.AddPair('mail', Values['mail']);
           data.AddPair('password', Values['password']);
-          data.AddPair('name', Values['writer']);
-          DataModule1.createWriterId(data);
-          data.Free;
         end;
-      mtPut:
-        begin
-          data := TJSONObject.Create;
-          with Request.ContentFields do
-          begin
-            data.AddPair('writer', Values['name']);
-            data.AddPair('mail', Values['mail']);
-            data.AddPair('password', Values['password']);
-          end;
-          DataModule1.updateWriterId(writerId, data);
-          data.Free;
-        end;
-    end;
-    data:=TJSONObject.Create;
-    DataModule1.custData(writerId,data);
-    Response.ContentType := 'text/html;charset=utf-8';
-    mustache:=TSynMustache.Parse(writerData.Content);
-    Response.Content := mustache.RenderJSON(data.ToString);
-    data.Free;
-  end
-  else
-    Handled := false;
-end;
-
-procedure TWebModule1.WebModule1writerTopAction(Sender: TObject;
-  Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
-var
-  data: TJSONObject;
-begin
-  if writerId = 0 then
-  begin
-    Handled := false;
-    Exit;
+        DataModule1.updateWriterId(writerId, data);
+        data.Free;
+      end;
   end;
+  data := TJSONObject.Create;
   DataModule1.magazines(writerId, data);
   Response.ContentType := 'text/html;charset=utf-8';
   mustache := TSynMustache.Parse(writerTop.Content);
-  Response.Content := mustache.RenderJSON(data.Value);
+  Response.Content := mustache.RenderJSON(data.ToJSON);
   data.Free;
 end;
 
 procedure TWebModule1.WebModuleCreate(Sender: TObject);
 begin
-  userId := 1;
+  readerId := 1;
   writerId := 1;
 end;
 

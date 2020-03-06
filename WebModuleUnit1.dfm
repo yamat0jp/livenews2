@@ -15,36 +15,20 @@ object WebModule1: TWebModule1
       PathInfo = '/help'
     end
     item
-      Name = 'regist'
-      PathInfo = '/regist'
-      OnAction = WebModule1registAction
-    end
-    item
       MethodType = mtGet
       Name = 'detail'
-      PathInfo = '/data'
+      PathInfo = '/backnumber'
+      OnAction = WebModule1detailAction
     end
     item
-      MethodType = mtGet
-      Name = 'readerTop'
-      PathInfo = '/reader/top'
-      OnAction = WebModule1readerTopAction
-    end
-    item
-      MethodType = mtPut
       Name = 'readerData'
       PathInfo = '/reader/data'
+      OnAction = WebModule1readerDataAction
     end
     item
       Name = 'selection'
       PathInfo = '/reader/select'
       OnAction = WebModule1selectionAction
-    end
-    item
-      MethodType = mtGet
-      Name = 'writerTop'
-      PathInfo = '/writer/top'
-      OnAction = WebModule1writerTopAction
     end
     item
       Name = 'writerData'
@@ -146,12 +130,15 @@ object WebModule1: TWebModule1
       '        </form>'
       '        <p>'#30331#37682#20013#12398#12510#12460#12472#12531#12391#12377
       '        {{#mag}}'
-      '                <p>{{magName}}'
+      '                <hr>'
+      '                <p>'#12479#12452#12488#12523'{{name}}'
       '                <p>{{comment}}'
-      '                <p>{{day}}'
-      '                <p>{{lastDay}}'
-      '                <p>{{enable}}'
-      '                <p>{{count}}'
+      '                <p>'#30331#37682#26085'{{day}}'
+      '                <p>'#26368#32066#26356#26032#26085'{{last}}'
+      '                <p>'#35501#32773#25968'{{count}}'
+      '        {{/mag}}'
+      '        {{^mag}}'
+      '                <p>0'#20874#12398#30330#34892#12391#12377
       '        {{/mag}}'
       '</body>'
       '</html')
@@ -179,6 +166,32 @@ object WebModule1: TWebModule1
       '</body>'
       '</html>')
     Left = 168
+    Top = 80
+  end
+  object backnumber: TPageProducer
+    HTMLDoc.Strings = (
+      '<!DOCTYPE html>'
+      '<html lang="en">'
+      '<head>'
+      '    <meta charset="UTF-8">'
+      
+        '    <meta name="viewport" content="width=device-width, initial-s' +
+        'cale=1.0">'
+      '    <title>Document</title>'
+      '</head>'
+      '<body>'
+      '        <p>{{name}}'
+      '        <p>{{comment}}'
+      '        {#data}'
+      '                <hr>'
+      '                {{content}}'
+      '        {/data}'
+      '        <form method=post action=/reader/select>'
+      '        <input type=submit value="'#30331#37682'">'
+      '        </form>'
+      '</body>'
+      '</html>')
+    Left = 112
     Top = 80
   end
 end

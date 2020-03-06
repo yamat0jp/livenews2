@@ -3,11 +3,11 @@ object DataModule1: TDataModule1
   OnCreate = DataModuleCreate
   Height = 257
   Width = 299
-  object index: TFDTable
+  object database: TFDTable
     IndexFieldNames = 'no'
     Connection = MagazineConnection
-    UpdateOptions.UpdateTableName = 'index'
-    TableName = 'index'
+    UpdateOptions.UpdateTableName = 'database'
+    TableName = 'database'
     Left = 48
     Top = 136
   end
