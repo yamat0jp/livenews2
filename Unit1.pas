@@ -14,7 +14,6 @@ uses
 type
   TDataModule1 = class(TDataModule)
     database: TFDTable;
-    FDTable2: TFDTable;
     indexTable: TFDTable;
     reader: TFDTable;
     magList: TFDTable;
@@ -178,7 +177,7 @@ procedure TDataModule1.DataModuleCreate(Sender: TObject);
 const
   tmp = 'create table if not exists ';
 begin
-  // FDQuery1.ExecSQL(tmp+'index(no int primary key, magId int, readerId int, writeId int);');
+//  FDQuery1.ExecSQL(tmp+'database(number int primary key, magId int, readerId int, writeId int);');
   FDQuery1.ExecSQL
     (tmp + 'mag(magId int primary key, magName varchar(20), comment varchar(50), day date, lastDay date, enable bool);');
   FDQuery1.ExecSQL
@@ -191,7 +190,7 @@ begin
     (tmp + 'indexTable(readerId int, magId int, primary key (readerId,magId));');
   FDQuery1.ExecSQL
     (tmp + 'magList(writerId int, magId int, primary key (writerId,magId));');
-  // index.Open;
+//  database.Open;
   mag.Open;
   writer.Open;
   reader.Open;
@@ -201,20 +200,20 @@ begin
 end;
 
 procedure TDataModule1.deleteMagazine(id: integer);
-  procedure main(DB: string);
+  procedure main(Sender: TObject);
   begin
-    FDQuery1.Open(Format('select * from %s group by magId;', [DB]));
-    if FDQuery1.Locate('magid',id) = true then
-      FDQuery1.Delete;
+    with Sender as TFDTable do
+      while Locate('magid',id) = true do
+        Delete;
   end;
 
 begin
   if mag.Locate('magId', id) = true then
   begin
     mag.Delete;
-    main('news');
-    main('database');
-    main('indexTable');
+    main(news);
+//    main('database');
+    main(indexTable);
   end;
 end;
 
@@ -236,22 +235,19 @@ begin
   if reader.Locate('readerid;reader;mail;password', VarArrayOf([id, na, ma, pa])
     ) = true then
     reader.Delete;
-  FDQuery1.SQL.Clear;
-  FDQuery1.SQL.Add('select * from indextable whrer readerid = :id;');
-  FDQuery1.Params.ParamByName('id').AsInteger := id;
-  FDQuery1.Open;
-  while FDQuery1.Eof = false do
-    FDQuery1.Delete;
+  while indexTable.Locate('readerid',id) = true do
+    indexTable.Delete;
 end;
 
 procedure TDataModule1.deleteWriter(id: integer);
-var
-  i: integer;
 begin
-  FDQuery1.Open('select * from maglist group by writerid;');
-  if FDQuery1.Locate('writerid',id) = true then
-    FDQuery1.Delete;
-  deleteMagazine(i);
+  if writer.Locate('writerid',id) = true then
+    writer.Delete;
+  while maglist.Locate('writerid',id) = true do
+  begin
+    deleteMagazine(magList.FieldByName('magid').AsInteger);
+    magList.Delete;
+  end;
 end;
 
 procedure TDataModule1.readerData(id: integer; out Data: TJSONObject);
@@ -555,7 +551,7 @@ procedure TDataModule1.updateWriterId(id: integer; Data: TJSONObject);
 var
   na, ma, pa: string;
 begin
-  na := Data.Values['writer'].Value;
+  na := Data.Values['name'].Value;
   ma := Data.Values['mail'].Value;
   pa := Data.Values['password'].Value;
   with writer do

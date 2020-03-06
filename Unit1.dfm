@@ -11,11 +11,6 @@ object DataModule1: TDataModule1
     Left = 48
     Top = 136
   end
-  object FDTable2: TFDTable
-    Connection = MagazineConnection
-    Left = 48
-    Top = 184
-  end
   object indexTable: TFDTable
     IndexFieldNames = 'readerId;magId'
     Connection = MagazineConnection

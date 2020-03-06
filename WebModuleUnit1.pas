@@ -141,7 +141,7 @@ begin
   data.AddPair('enable', TJSONTrue.Create);
   DataModule1.createMagId(writerId, data);
   data.Free;
-  Response.SendRedirect('/writer/data');
+  Response.SendRedirect('/writer/top');
 end;
 
 procedure TWebModule1.WebModule1writerDataAction(Sender: TObject;
@@ -163,9 +163,15 @@ begin
         Exit;
       end;
     mtPost:
+      if Request.ContentFields.Values['_method'] = 'delete' then
+        DataModule1.deleteWriter(writerId)
+      else
       begin
         data.AddPair('name', Request.ContentFields.Values['writer']);
-        DataModule1.createWriterId(data);
+        if Request.ContentFields.Values['_method'] = 'put' then
+          DataModule1.updateWriterId(writerId, data)
+        else
+          DataModule1.createWriterId(data);
       end;
     mtPut:
       DataModule1.updateWriterId(writerId, data);
@@ -173,8 +179,8 @@ begin
       DataModule1.deleteWriter(writerId);
   end;
   data.Free;
-  data:=TJSONObject.Create;
-  DataModule1.custData(writerId,data);
+  data := TJSONObject.Create;
+  DataModule1.custData(writerId, data);
   Response.ContentType := 'text/html;charset=utf-8';
   mustache := TSynMustache.Parse(writerData.Content);
   Response.Content := mustache.RenderJSON(data.ToJSON);
