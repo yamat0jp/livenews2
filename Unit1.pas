@@ -208,13 +208,10 @@ procedure TDataModule1.deleteMagazine(id: integer);
   end;
 
 begin
-  if mag.Locate('magId', id) = true then
-  begin
-    mag.Delete;
-    main(news);
+  main(mag);
+  main(news);
 //    main('database');
-    main(indexTable);
-  end;
+  main(indexTable);
 end;
 
 procedure TDataModule1.deleteNumber(id, num: integer);
@@ -246,7 +243,7 @@ begin
   while maglist.Locate('writerid',id) = true do
   begin
     deleteMagazine(magList.FieldByName('magid').AsInteger);
-    magList.Delete;
+    magList.Delete;         ///////
   end;
 end;
 
