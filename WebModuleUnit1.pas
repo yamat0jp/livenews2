@@ -62,6 +62,10 @@ begin
     data.AddPair('id',TJSONFalse.Create)
   else
     data.AddPair('id',TJSONTrue.Create);
+  if Request.QueryFields.Values['op'] <> '' then
+    data.AddPair('comment','2èdìoò^Ç≈Ç∑ÅBìoò^Ç…é∏îsÇµÇ‹ÇµÇΩÅB')
+  else
+    data.AddPair('comment',TJSONFalse.Create);
   mustache := TSynMustache.Parse(top.Content);
   Response.ContentType := 'text/html;charset=utf-8';
   Response.Content := mustache.RenderJSON(data.ToJSON);
@@ -134,8 +138,10 @@ begin
       end;
     mtPost:
       if DataModule1.createReaderId(data) = false then
-        //2èdìoò^
-        ;
+      begin
+        Response.SendRedirect('/top?op=1#message');
+        Exit;
+      end;
     mtDelete:
       with Request.ContentFields do
       begin

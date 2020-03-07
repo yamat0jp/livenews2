@@ -139,7 +139,11 @@ object WebModule1: TWebModule1
       '                </table>'
       '        {{/enable}}'
       '    {{/items}}'
-      '    <hr>'
+      '    <hr id=message>'
+      '    {{#comment}}'
+      '        <p>'#12513#12483#12475#12540#12472
+      '        {{.}}'
+      '    {{/comment}}'
       '    <p>'#26032#35215#30331#37682
       '    <form method="post" action="/reader/data">'
       '        <input type="text" name="reader">'
