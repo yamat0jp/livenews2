@@ -152,7 +152,14 @@ object WebModule1: TWebModule1
       '    {{#items}}'
       '        {{#enable}}'
       '                <table border=1>'
-      '                <th>{{magName}}</th>'
+      '                <th>{{magName}}'
+      '                        {{^fun}}{{#id}}'
+      
+        '                        <form method=post action=/reader/select?' +
+        'name={{magNum}}>'
+      '                        <input type=submit value="'#30331#37682'"></form>'
+      '                        {{/id}}{{/fun}}'
+      '                </th>'
       '                <tr><td>{{comment}}</td></tr>'
       '                <tr><td>{{day}}</td></tr>'
       '                <tr><td>{{lastDay}}</td></tr>'

@@ -94,7 +94,7 @@ object DataModule1: TDataModule1
     Top = 80
   end
   object news: TFDTable
-    IndexFieldNames = 'no;magId'
+    IndexFieldNames = 'newsId'
     Connection = MagazineConnection
     UpdateOptions.UpdateTableName = 'news'
     TableName = 'news'
@@ -173,6 +173,12 @@ object DataModule1: TDataModule1
       Origin = 'magId'
       ProviderFlags = [pfInUpdate, pfInWhere, pfInKey]
       Required = True
+    end
+    object magmagNum: TWideStringField
+      AutoGenerateValue = arDefault
+      FieldName = 'magNum'
+      Origin = 'magNum'
+      Size = 10
     end
     object magmagName: TWideStringField
       AutoGenerateValue = arDefault

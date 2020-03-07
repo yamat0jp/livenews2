@@ -64,15 +64,15 @@ procedure TWebModule1.WebModule1DefaultHandlerAction(Sender: TObject;
 var
   data: TJSONObject;
 begin
-  DataModule1.magListAll(data);
+  DataModule1.magListAll(readerId,data);
   if readerId = 0 then
-    data.AddPair('id',TJSONFalse.Create)
+    data.AddPair('id', TJSONFalse.Create)
   else
-    data.AddPair('id',TJSONTrue.Create);
+    data.AddPair('id', TJSONTrue.Create);
   if Request.QueryFields.Values['op'] <> '' then
-    data.AddPair('comment','2èdìoò^Ç≈Ç∑ÅBìoò^Ç…é∏îsÇµÇ‹ÇµÇΩÅB')
+    data.AddPair('comment', '2èdìoò^Ç≈Ç∑ÅBìoò^Ç…é∏îsÇµÇ‹ÇµÇΩÅB')
   else
-    data.AddPair('comment',TJSONFalse.Create);
+    data.AddPair('comment', TJSONFalse.Create);
   mustache := TSynMustache.Parse(top.Content);
   Response.ContentType := 'text/html;charset=utf-8';
   Response.Content := mustache.RenderJSON(data.ToJSON);
@@ -98,18 +98,18 @@ var
   mem: TMemoryStream;
   raw: TBytes;
 begin
-  data:=TJSONObject.Create;
-  data.AddPair('id',TJSONNumber.Create(Request.QueryFields.Values['id']));
-  data.AddPair('number',TJSONNumber.Create(Request.QueryFields.Values['num']));
-  id :=DataModule1.imageId(data);
-  DataModule1.imageView(id,data);
-  mem:=TMemoryStream.Create;
-  raw:=TNetEncoding.Base64.DecodeStringToBytes(data.Values['data'].Value);
-  mem.WriteBuffer(raw,Length(raw));
-  mem.Position:=0;
+  data := TJSONObject.Create;
+  data.AddPair('id', TJSONNumber.Create(Request.QueryFields.Values['id']));
+  data.AddPair('number', TJSONNumber.Create(Request.QueryFields.Values['num']));
+  id := DataModule1.imageId(data);
+  DataModule1.imageView(id, data);
+  mem := TMemoryStream.Create;
+  raw := TNetEncoding.Base64.DecodeStringToBytes(data.Values['data'].Value);
+  mem.WriteBuffer(raw, Length(raw));
+  mem.Position := 0;
   Finalize(raw);
-  Response.ContentType:='jpeg/image';
-  Response.ContentStream:=mem;
+  Response.ContentType := 'jpeg/image';
+  Response.ContentStream := mem;
 end;
 
 procedure TWebModule1.WebModule1loginAction(Sender: TObject;
@@ -117,23 +117,23 @@ procedure TWebModule1.WebModule1loginAction(Sender: TObject;
 var
   data: TJSONObject;
 begin
-  data:=TJSONObject.Create;
+  data := TJSONObject.Create;
   with Request.ContentFields do
   begin
-    data.AddPair('mail',Values['mail']);
-    data.AddPair('password',Values['password']);
+    data.AddPair('mail', Values['mail']);
+    data.AddPair('password', Values['password']);
   end;
-  readerId:=DataModule1.loginReader(data);
+  readerId := DataModule1.loginReader(data);
   data.Free;
-  Handled:=false;
+  Handled := false;
 end;
 
 procedure TWebModule1.WebModule1logoutAction(Sender: TObject;
   Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
 begin
-  readerId:=0;
-  writerId:=0;
-  Handled:=false;
+  readerId := 0;
+  writerId := 0;
+  Handled := false;
 end;
 
 procedure TWebModule1.WebModule1mainViewAction(Sender: TObject;
@@ -141,9 +141,9 @@ procedure TWebModule1.WebModule1mainViewAction(Sender: TObject;
 var
   data: TJSONObject;
 begin
-  Response.ContentType:='text/html;charset=utf-8';
-  DataModule1.mainView(readerId,data);
-  mustache:=TSynMustache.Parse(mainView.Content);
+  Response.ContentType := 'text/html;charset=utf-8';
+  DataModule1.mainView(readerId, data);
+  mustache := TSynMustache.Parse(mainView.Content);
   Response.Content := mustache.RenderJSON(data.ToJSON);
 end;
 
@@ -156,7 +156,7 @@ begin
   with Request.ContentFields do
   begin
     data := TJSONObject.Create;
-    data.AddPair('id',TJSONNumber.Create(readerId));
+    data.AddPair('id', TJSONNumber.Create(readerId));
     data.AddPair('name', Values['reader']);
     data.AddPair('mail', Values['mail']);
     data.AddPair('password', Values['password']);
@@ -173,14 +173,17 @@ begin
         = true then
       begin
         data.RemovePair('password');
-        data.AddPair('password',Request.ContentFields.Values['new']);
+        data.AddPair('password', Request.ContentFields.Values['new']);
         DataModule1.updateReaderId(data);
       end;
     mtPost:
-      if DataModule1.createReaderId(data) = false then
       begin
-        Response.SendRedirect('/top?op=1#message');
-        Exit;
+        readerId := DataModule1.createReaderId(data);
+        if readerId = 0 then
+        begin
+          Response.SendRedirect('/top?op=1#message');
+          Exit;
+        end;
       end;
     mtDelete:
       with Request.ContentFields do
@@ -194,8 +197,8 @@ begin
   data.Free;
   Response.ContentType := 'text/html;charset=utf-8';
   DataModule1.userView(readerId, data);
-  DataModule1.readerData(readerId,d);
-  data.AddPair('reader',d);
+  DataModule1.readerData(readerId, d);
+  data.AddPair('reader', d);
   mustache := TSynMustache.Parse(readerTop.Content);
   Response.Content := mustache.RenderJSON(data.ToJSON);
 end;
@@ -205,10 +208,10 @@ procedure TWebModule1.WebModule1readerTopAction(Sender: TObject;
 var
   data: TJSONObject;
 begin
-  Response.ContentType:='text/html;charset=utf-8';
-  DataModule1.getView(readerId,data);
-  mustache:=TSynMustache.Parse(mainView.Content);
-  Response.Content:=mustache.RenderJSON(data.ToJSON);
+  Response.ContentType := 'text/html;charset=utf-8';
+  DataModule1.getView(readerId, data);
+  mustache := TSynMustache.Parse(mainView.Content);
+  Response.Content := mustache.RenderJSON(data.ToJSON);
 end;
 
 procedure TWebModule1.WebModule1selectionAction(Sender: TObject;
@@ -218,13 +221,12 @@ var
 begin
   id := DataModule1.magid(Request.ContentFields.Values['name']);
   case Request.MethodType of
-    mtGet:
-      Handled := false;
     mtPost:
       DataModule1.magIdOn(readerId, id);
     mtDelete:
       DataModule1.magIdOff(readerId, id);
   end;
+  Handled:=false;
 end;
 
 procedure TWebModule1.WebModule1writeMagAction(Sender: TObject;
@@ -272,7 +274,7 @@ begin
           DataModule1.createWriterId(data);
       end
       else
-      {ÉÅÅ[ÉãÉAÉhÉåÉXÇÃ2èdìoò^};
+        { ÉÅÅ[ÉãÉAÉhÉåÉXÇÃ2èdìoò^ };
     mtPut:
       DataModule1.updateWriterId(writerId, data);
     mtDelete:

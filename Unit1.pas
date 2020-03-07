@@ -47,6 +47,7 @@ type
     magenable: TBooleanField;
     image: TFDTable;
     newsnewsId: TIntegerField;
+    magmagNum: TWideStringField;
     procedure DataModuleCreate(Sender: TObject);
   private
     { Private êÈåæ }
@@ -57,7 +58,7 @@ type
     procedure backNumber(id: integer; out Data: TJSONObject);
     function existsMail(mail: string): Boolean;
     function checkUserPassword(id: integer; password: string): Boolean;
-    function createReaderId(Data: TJSONObject): Boolean;
+    function createReaderId(Data: TJSONObject): integer;
     procedure deleteReaderId(Data: TJSONObject);
     function updateReaderId(Data: TJSONObject): Boolean;
     procedure custData(id: integer; Data: TJSONObject);
@@ -69,11 +70,12 @@ type
     procedure getView(id: integer; out Data: TJSONObject); overload;
     procedure viewList(id: integer; out Data: TJSONObject);
     procedure magazines(id: integer; out Data: TJSONObject);
-    procedure magListAll(out Data: TJSONObject);
+    procedure magListAll(id: integer; out Data: TJSONObject);
     procedure magData(id: integer; out Data: TJSONObject);
     function magid(name: string): integer;
     procedure magIdOff(id, magid: integer);
     procedure magIdOn(id, magid: integer);
+    function already(id: integer;const magnum: string): Boolean;
     procedure createMagId(id: integer; out Data: TJSONObject);
     procedure postMessage(id: integer; Data: TJSONObject);
     procedure createWriterId(Data: TJSONObject);
@@ -110,6 +112,11 @@ begin
   com := Data.Values['comment'].Value;
   mag.AppendRecord([i, na, com, Date, Date, true]);
   magList.AppendRecord([id, i]);
+end;
+
+function TDataModule1.already(id: integer; const magnum: string): Boolean;
+begin
+  result:=indexTable.Locate('readerId,magNum',VarArrayOf([id,magnum]));
 end;
 
 procedure TDataModule1.backNumber(id: integer; out Data: TJSONObject);
@@ -168,7 +175,7 @@ begin
   magList.AppendRecord([id, i]);
 end;
 
-function TDataModule1.createReaderId(Data: TJSONObject): Boolean;
+function TDataModule1.createReaderId(Data: TJSONObject): integer;
 var
   i: integer;
   na, ma, pa: string;
@@ -176,15 +183,15 @@ begin
   na := Data.Values['name'].Value;
   ma := Data.Values['mail'].Value;
   pa := Data.Values['password'].Value;
-  if reader.Locate('mail;password',VarArrayOf([na,ma])) = true then
+  if reader.Locate('mail',ma) = false then
   begin
     FDQuery1.Open('select MAX(readerid) as id from reader;');
     i := FDQuery1.FieldByName('id').AsInteger + 1;
     reader.AppendRecord([i, na, ma, pa]);
-    result:=true;
+    result:=i;
   end
   else
-    result:=false;
+    result:=0;
 end;
 
 procedure TDataModule1.DataModuleCreate(Sender: TObject);
@@ -456,7 +463,7 @@ begin
     indexTable.AppendRecord([id, magid]);
 end;
 
-procedure TDataModule1.magListAll(out Data: TJSONObject);
+procedure TDataModule1.magListAll(id: integer;out Data: TJSONObject);
 var
   js: TJSONObject;
   ar: TJSONArray;
@@ -474,11 +481,16 @@ begin
     if VarIsNull(v) = true then
       v:=0;
     js := TJSONObject.Create;
+    js.AddPair('magNum',mag.FieldByName('magNum').AsString);
     js.AddPair('magName', mag.FieldByName('magName').AsString);
     js.AddPair('comment', mag.FieldByName('comment').AsString);
     js.AddPair('day', mag.FieldByName('day').AsString);
     js.AddPair('lastDay', mag.FieldByName('lastDay').AsString);
     js.AddPair('count',v);
+    if (id = 0)or(indexTable.Locate('magid',id) = false) then
+      js.AddPair('fun',TJSONFalse.Create)
+    else
+      js.AddPair('fun',TJSONTrue.Create);
     ar.Add(js);
     mag.Next;
   end;
