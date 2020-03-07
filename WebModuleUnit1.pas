@@ -106,7 +106,7 @@ end;
 procedure TWebModule1.WebModule1readerDataAction(Sender: TObject;
   Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
 var
-  data: TJSONObject;
+  data, d: TJSONObject;
   num: TJSONNumber;
 begin
   with Request.ContentFields do
@@ -133,7 +133,9 @@ begin
         DataModule1.updateReaderId(data);
       end;
     mtPost:
-      DataModule1.createReaderId(data);
+      if DataModule1.createReaderId(data) = false then
+        //2èdìoò^
+        ;
     mtDelete:
       with Request.ContentFields do
       begin
@@ -146,6 +148,8 @@ begin
   data.Free;
   Response.ContentType := 'text/html;charset=utf-8';
   DataModule1.userView(readerId, data);
+  DataModule1.readerData(readerId,d);
+  data.AddPair('reader',d);
   mustache := TSynMustache.Parse(readerTop.Content);
   Response.Content := mustache.RenderJSON(data.ToJSON);
 end;

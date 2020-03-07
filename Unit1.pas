@@ -56,7 +56,7 @@ type
     procedure backNumber(id: integer; out Data: TJSONObject);
     function existsMail(mail: string): Boolean;
     function checkUserPassword(id: integer; password: string): Boolean;
-    procedure createReaderId(Data: TJSONObject);
+    function createReaderId(Data: TJSONObject): Boolean;
     procedure deleteReaderId(Data: TJSONObject);
     function updateReaderId(Data: TJSONObject): Boolean;
     procedure custData(id: integer; Data: TJSONObject);
@@ -76,7 +76,7 @@ type
     procedure postMessage(id: integer; Data: TJSONObject);
     procedure createWriterId(Data: TJSONObject);
     procedure readerData(id: integer; out Data: TJSONObject);
-    procedure titleView(id: integer; Data: TJSONObject);
+    procedure titleView(id: integer;out Data: TJSONObject);
     procedure updateWriterId(id: integer; Data: TJSONObject);
     procedure userView(id: integer; out Data: TJSONObject);
     function loginReader(data: TJSONObject): integer;
@@ -163,17 +163,23 @@ begin
   magList.AppendRecord([id, i]);
 end;
 
-procedure TDataModule1.createReaderId(Data: TJSONObject);
+function TDataModule1.createReaderId(Data: TJSONObject): Boolean;
 var
   i: integer;
   na, ma, pa: string;
 begin
-  FDQuery1.Open('select MAX(readerid) as id from reader;');
-  i := FDQuery1.FieldByName('id').AsInteger + 1;
   na := Data.Values['name'].Value;
   ma := Data.Values['mail'].Value;
   pa := Data.Values['password'].Value;
-  reader.AppendRecord([i, na, ma, pa]);
+  if reader.Locate('mail;password',VarArrayOf([na,ma])) = true then
+  begin
+    FDQuery1.Open('select MAX(readerid) as id from reader;');
+    i := FDQuery1.FieldByName('id').AsInteger + 1;
+    reader.AppendRecord([i, na, ma, pa]);
+    result:=true;
+  end
+  else
+    result:=false;
 end;
 
 procedure TDataModule1.DataModuleCreate(Sender: TObject);
@@ -269,18 +275,28 @@ procedure TDataModule1.userView(id: integer; out Data: TJSONObject);
 var
   i: integer;
   list: TList<integer>;
+  ar: TJSONArray;
+  d: TJSONObject;
 begin
-  Data := TJSONObject.Create;
   list := TList<integer>.Create;
   FDQuery1.SQL.Clear;
   FDQuery1.SQL.Add('select * from indexTable where readerid = :id;');
   FDQuery1.Params.ParamByName('id').AsInteger := id;
   FDQuery1.Open;
   while FDQuery1.Eof = false do
+  begin
     list.Add(FDQuery1.FieldByName('magid').AsInteger);
+    FDQuery1.Next;
+  end;
+  ar:=TJSONArray.Create;
   for i in list do
-    titleView(i, Data);
+  begin
+    titleView(i, d);
+    ar.Add(d);
+  end;
   list.Free;
+  Data := TJSONObject.Create;
+  data.AddPair('mag',ar);
 end;
 
 procedure TDataModule1.custData(id: integer; Data: TJSONObject);
@@ -540,12 +556,13 @@ begin
   end;
 end;
 
-procedure TDataModule1.titleView(id: integer; Data: TJSONObject);
+procedure TDataModule1.titleView(id: integer;out Data: TJSONObject);
 var
   d: TJSONObject;
   i: integer;
 begin
-  d := Data;
+  Data:=TJSONObject.Create;
+  d:=Data;
   FDQuery1.SQL.Clear;
   FDQuery1.SQL.Add('select * from mag where magid = :id;');
   FDQuery1.Params.ParamByName('id').AsInteger := id;
