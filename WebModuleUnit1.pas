@@ -26,6 +26,10 @@ type
       Response: TWebResponse; var Handled: Boolean);
     procedure WebModule1writerTopAction(Sender: TObject; Request: TWebRequest;
       Response: TWebResponse; var Handled: Boolean);
+    procedure WebModule1loginAction(Sender: TObject; Request: TWebRequest;
+      Response: TWebResponse; var Handled: Boolean);
+    procedure WebModule1logoutAction(Sender: TObject; Request: TWebRequest;
+      Response: TWebResponse; var Handled: Boolean);
   private
     { private 宣言 }
     writerId: integer;
@@ -54,6 +58,10 @@ var
   data: TJSONObject;
 begin
   DataModule1.magListAll(data);
+  if readerId = 0 then
+    data.AddPair('id',TJSONFalse.Create)
+  else
+    data.AddPair('id',TJSONTrue.Create);
   mustache := TSynMustache.Parse(top.Content);
   Response.ContentType := 'text/html;charset=utf-8';
   Response.Content := mustache.RenderJSON(data.ToJSON);
@@ -71,6 +79,30 @@ begin
   Response.Content := mustache.RenderJSON(data.ToString);
 end;
 
+procedure TWebModule1.WebModule1loginAction(Sender: TObject;
+  Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
+var
+  data: TJSONObject;
+begin
+  data:=TJSONObject.Create;
+  with Request.ContentFields do
+  begin
+    data.AddPair('mail',Values['mail']);
+    data.AddPair('password',Values['password']);
+  end;
+  readerId:=DataModule1.loginReader(data);
+  data.Free;
+  Handled:=false;
+end;
+
+procedure TWebModule1.WebModule1logoutAction(Sender: TObject;
+  Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
+begin
+  readerId:=0;
+  writerId:=0;
+  Handled:=false;
+end;
+
 procedure TWebModule1.WebModule1readerDataAction(Sender: TObject;
   Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
 var
@@ -80,6 +112,7 @@ begin
   with Request.ContentFields do
   begin
     data := TJSONObject.Create;
+    data.AddPair('id',TJSONNumber.Create(readerId));
     data.AddPair('name', Values['reader']);
     data.AddPair('mail', Values['mail']);
     data.AddPair('password', Values['password']);
@@ -94,7 +127,11 @@ begin
     mtPut:
       if DataModule1.checkUserPassword(readerId, data.Values['password'].Value)
         = true then
+      begin
+        data.RemovePair('password');
+        data.AddPair('password',Request.ContentFields.Values['new']);
         DataModule1.updateReaderId(data);
+      end;
     mtPost:
       DataModule1.createReaderId(data);
     mtDelete:
@@ -165,14 +202,16 @@ begin
     mtPost:
       if Request.ContentFields.Values['_method'] = 'delete' then
         DataModule1.deleteWriter(writerId)
-      else
+      else if DataModule1.existsMail(data.Values['mail'].Value) = false then
       begin
         data.AddPair('name', Request.ContentFields.Values['writer']);
         if Request.ContentFields.Values['_method'] = 'put' then
           DataModule1.updateWriterId(writerId, data)
         else
           DataModule1.createWriterId(data);
-      end;
+      end
+      else
+      {メールアドレスの2重登録};
     mtPut:
       DataModule1.updateWriterId(writerId, data);
     mtDelete:
@@ -202,7 +241,6 @@ end;
 
 procedure TWebModule1.WebModuleCreate(Sender: TObject);
 begin
-  readerId := 1;
   writerId := 1;
 end;
 

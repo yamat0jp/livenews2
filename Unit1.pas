@@ -54,10 +54,11 @@ type
     { Public êÈåæ }
     procedure AddMagazine(id: integer; out Data: TJSONObject);
     procedure backNumber(id: integer; out Data: TJSONObject);
+    function existsMail(mail: string): Boolean;
     function checkUserPassword(id: integer; password: string): Boolean;
     procedure createReaderId(Data: TJSONObject);
     procedure deleteReaderId(Data: TJSONObject);
-    procedure updateReaderId(Data: TJSONObject);
+    function updateReaderId(Data: TJSONObject): Boolean;
     procedure custData(id: integer; Data: TJSONObject);
     procedure custView(id: integer; out Data: TJSONObject);
     procedure deleteMagazine(id: integer);
@@ -78,6 +79,8 @@ type
     procedure titleView(id: integer; Data: TJSONObject);
     procedure updateWriterId(id: integer; Data: TJSONObject);
     procedure userView(id: integer; out Data: TJSONObject);
+    function loginReader(data: TJSONObject): integer;
+    function loginWriter(data: TJSONObject): integer;
   end;
 
 var
@@ -243,8 +246,13 @@ begin
   while maglist.Locate('writerid',id) = true do
   begin
     deleteMagazine(magList.FieldByName('magid').AsInteger);
-    magList.Delete;         ///////
+    magList.Delete;
   end;
+end;
+
+function TDataModule1.existsMail(mail: string): Boolean;
+begin
+  result := (writer.Locate('mail',mail) = true)or(reader.Locate('mail',mail) = true);
 end;
 
 procedure TDataModule1.readerData(id: integer; out Data: TJSONObject);
@@ -335,6 +343,30 @@ begin
   FDQuery1.Params.ParamByName('id').AsInteger := id;
   FDQuery1.Open;
   Data := makeTable(FDQuery1);
+end;
+
+function TDataModule1.loginReader(data: TJSONObject): integer;
+var
+  ma,pa: string;
+begin
+  ma:=Data.Values['mail'].Value;
+  pa:=Data.Values['password'].Value;
+  if reader.Locate('mail;password',VarArrayOf([ma,pa])) = true then
+    result:=reader.FieldByName('id').AsInteger
+  else
+    result:=0;
+end;
+
+function TDataModule1.loginWriter(data: TJSONObject): integer;
+var
+  ma,pa: string;
+begin
+  ma:=Data.Values['mail'].Value;
+  pa:=Data.Values['password'].Value;
+  if writer.Locate('mail;password',VarArrayOf([ma,pa])) = true then
+    result:=writer.FieldByName('id').AsInteger
+  else
+    result:=0;
 end;
 
 procedure TDataModule1.magData(id: integer; out Data: TJSONObject);
@@ -527,13 +559,14 @@ begin
     end;
 end;
 
-procedure TDataModule1.updateReaderId(Data: TJSONObject);
+function TDataModule1.updateReaderId(Data: TJSONObject): Boolean;
 var
   na, ma, pa: string;
 begin
   na:=Data.Values['reader'].Value;
   ma:=Data.Values['mail'].Value;
   pa:=data.Values['password'].Value;
+  if reader.Locate('id',data.Values['id'].Value.ToInteger) = true then
   with reader do
   begin
     Edit;
@@ -541,7 +574,10 @@ begin
     FieldByName('mail').AsString:=ma;
     FieldByName('password').AsString:=pa;
     Post;
-  end;
+    result:=true;
+  end
+  else
+    result:=false;
 end;
 
 procedure TDataModule1.updateWriterId(id: integer; Data: TJSONObject);

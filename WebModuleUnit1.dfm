@@ -45,6 +45,18 @@ object WebModule1: TWebModule1
       Name = 'writerTop'
       PathInfo = '/writer/top'
       OnAction = WebModule1writerTopAction
+    end
+    item
+      MethodType = mtPost
+      Name = 'login'
+      PathInfo = '/reader/login'
+      OnAction = WebModule1loginAction
+    end
+    item
+      MethodType = mtPost
+      Name = 'logout'
+      PathInfo = '/logout'
+      OnAction = WebModule1logoutAction
     end>
   Height = 225
   Width = 415
@@ -69,6 +81,19 @@ object WebModule1: TWebModule1
       '        </table>'
       '    {{/mag}}'
       '    <p><a href=/top>'#12488#12483#12503'</a>'#12506#12540#12472#12408#25147#12387#12390#36861#21152#12375#12414#12375#12423#12358
+      '    <hr>'
+      '    <p>'#22522#26412#24773#22577
+      '    {{#reader}}'
+      '        <form method=post action=/reader/data>'
+      '        <input type=hidden name="_method" value=put>'
+      '        <p>name : {{name}}'
+      '        <p>mail : {{mail}} <input type=text name=mail>'
+      
+        '        <p>password : *** <input type=text name=password>=><inpu' +
+        't type=password name=new>'
+      '        <input type=submit value="'#22793#26356'">'
+      '        </form>'
+      '    {{/reader}}'
       '</body>'
       '</html>')
     Left = 48
@@ -87,6 +112,21 @@ object WebModule1: TWebModule1
         'cale=1.0">'
       '</head>'
       '<body>'
+      '    {{#id}}'
+      '        <p>'#12525#12464#12450#12454#12488
+      '        <form method=post action=/logout>'
+      '        <input type=submit>'
+      '        </form>'
+      '    {{/id}}'
+      '    {{^id}}'
+      '        <p>'#12525#12464#12452#12531
+      '        <form method=post action=/reader/login>'
+      
+        '        <p>mail : <input type=text name=mail>password : <input t' +
+        'ype=password name=password>'
+      '        <input type=submit>'
+      '        </form>'
+      '    {{/id}}'
       '    {{#items}}'
       '        {{#enable}}'
       '                <table border=1>'
@@ -98,6 +138,8 @@ object WebModule1: TWebModule1
       '                </table>'
       '        {{/enable}}'
       '    {{/items}}'
+      '    <hr>'
+      '    <p>'#26032#35215#30331#37682
       '    <form method="post" action="/regist">'
       '        <input type="text" name="reader">'
       '        <input type="text" name="mail">'
