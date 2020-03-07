@@ -21,14 +21,19 @@ object WebModule1: TWebModule1
       OnAction = WebModule1detailAction
     end
     item
+      Name = 'selection'
+      PathInfo = '/reader/select'
+      OnAction = WebModule1selectionAction
+    end
+    item
       Name = 'readerData'
       PathInfo = '/reader/data'
       OnAction = WebModule1readerDataAction
     end
     item
-      Name = 'selection'
-      PathInfo = '/reader/select'
-      OnAction = WebModule1selectionAction
+      Name = 'readerTop'
+      PathInfo = '/reader/top'
+      OnAction = WebModule1readerTopAction
     end
     item
       Name = 'writerData'
@@ -36,15 +41,15 @@ object WebModule1: TWebModule1
       OnAction = WebModule1writerDataAction
     end
     item
+      Name = 'writerTop'
+      PathInfo = '/writer/top'
+      OnAction = WebModule1writerTopAction
+    end
+    item
       MethodType = mtPost
       Name = 'writeMag'
       PathInfo = '/writer/regist'
       OnAction = WebModule1writeMagAction
-    end
-    item
-      Name = 'writerTop'
-      PathInfo = '/writer/top'
-      OnAction = WebModule1writerTopAction
     end
     item
       MethodType = mtPost
@@ -57,6 +62,22 @@ object WebModule1: TWebModule1
       Name = 'logout'
       PathInfo = '/logout'
       OnAction = WebModule1logoutAction
+    end
+    item
+      Name = 'mainView'
+      PathInfo = '/reader/top'
+      OnAction = WebModule1mainViewAction
+    end
+    item
+      MethodType = mtGet
+      Name = 'image'
+      PathInfo = '/img'
+      OnAction = WebModule1imageAction
+    end
+    item
+      Enabled = False
+      Name = 'sumbnail'
+      PathInfo = '/sum'
     end>
   Height = 225
   Width = 415
@@ -252,5 +273,31 @@ object WebModule1: TWebModule1
       '</html>')
     Left = 112
     Top = 80
+  end
+  object mainView: TPageProducer
+    HTMLDoc.Strings = (
+      '<!DOCTYPE html>'
+      '<html lang="ja">'
+      '<head>'
+      '    <meta charset="UTF-8">'
+      
+        '    <meta name="viewport" content="width=device-width, initial-s' +
+        'cale=1.0">'
+      '    <title>Document</title>'
+      '</head>'
+      '<body>'
+      '        <p>'#12491#12517#12540#12473#12398#25968#12293#12434#12362#27005#12375#12415#12367#12384#12373#12356
+      '        {{#news}}'
+      '        <hr>'
+      '                <p>[{{magName}}] ({{day}})'
+      '                {{text}}'
+      '                {{#updated}}'
+      '                        <p>{{hint}}'
+      '                {{/updated}}'
+      '        {{/news}}'
+      '</body>'
+      '</html>')
+    Left = 240
+    Top = 24
   end
 end

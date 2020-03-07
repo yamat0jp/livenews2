@@ -11,6 +11,7 @@ type
     writerTop: TPageProducer;
     writerData: TPageProducer;
     backnumber: TPageProducer;
+    mainView: TPageProducer;
     procedure WebModule1DefaultHandlerAction(Sender: TObject;
       Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
     procedure WebModuleCreate(Sender: TObject);
@@ -30,6 +31,12 @@ type
       Response: TWebResponse; var Handled: Boolean);
     procedure WebModule1logoutAction(Sender: TObject; Request: TWebRequest;
       Response: TWebResponse; var Handled: Boolean);
+    procedure WebModule1mainViewAction(Sender: TObject; Request: TWebRequest;
+      Response: TWebResponse; var Handled: Boolean);
+    procedure WebModule1imageAction(Sender: TObject; Request: TWebRequest;
+      Response: TWebResponse; var Handled: Boolean);
+    procedure WebModule1readerTopAction(Sender: TObject; Request: TWebRequest;
+      Response: TWebResponse; var Handled: Boolean);
   private
     { private êÈåæ }
     writerId: integer;
@@ -43,7 +50,7 @@ var
 
 implementation
 
-uses SynMustache, SynCommons, System.JSON, Unit1;
+uses SynMustache, SynCommons, System.JSON, Unit1, System.NetEncoding;
 
 { %CLASSGROUP 'Vcl.Controls.TControl' }
 
@@ -83,6 +90,28 @@ begin
   Response.Content := mustache.RenderJSON(data.ToString);
 end;
 
+procedure TWebModule1.WebModule1imageAction(Sender: TObject;
+  Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
+var
+  id: integer;
+  data: TJSONObject;
+  mem: TMemoryStream;
+  raw: TBytes;
+begin
+  data:=TJSONObject.Create;
+  data.AddPair('id',TJSONNumber.Create(Request.QueryFields.Values['id']));
+  data.AddPair('number',TJSONNumber.Create(Request.QueryFields.Values['num']));
+  id :=DataModule1.imageId(data);
+  DataModule1.imageView(id,data);
+  mem:=TMemoryStream.Create;
+  raw:=TNetEncoding.Base64.DecodeStringToBytes(data.Values['data'].Value);
+  mem.WriteBuffer(raw,Length(raw));
+  mem.Position:=0;
+  Finalize(raw);
+  Response.ContentType:='jpeg/image';
+  Response.ContentStream:=mem;
+end;
+
 procedure TWebModule1.WebModule1loginAction(Sender: TObject;
   Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
 var
@@ -105,6 +134,17 @@ begin
   readerId:=0;
   writerId:=0;
   Handled:=false;
+end;
+
+procedure TWebModule1.WebModule1mainViewAction(Sender: TObject;
+  Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
+var
+  data: TJSONObject;
+begin
+  Response.ContentType:='text/html;charset=utf-8';
+  DataModule1.mainView(readerId,data);
+  mustache:=TSynMustache.Parse(mainView.Content);
+  Response.Content := mustache.RenderJSON(data.ToJSON);
 end;
 
 procedure TWebModule1.WebModule1readerDataAction(Sender: TObject;
@@ -158,6 +198,17 @@ begin
   data.AddPair('reader',d);
   mustache := TSynMustache.Parse(readerTop.Content);
   Response.Content := mustache.RenderJSON(data.ToJSON);
+end;
+
+procedure TWebModule1.WebModule1readerTopAction(Sender: TObject;
+  Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
+var
+  data: TJSONObject;
+begin
+  Response.ContentType:='text/html;charset=utf-8';
+  DataModule1.getView(readerId,data);
+  mustache:=TSynMustache.Parse(mainView.Content);
+  Response.Content:=mustache.RenderJSON(data.ToJSON);
 end;
 
 procedure TWebModule1.WebModule1selectionAction(Sender: TObject;

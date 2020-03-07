@@ -9,7 +9,7 @@ object DataModule1: TDataModule1
     UpdateOptions.UpdateTableName = 'database'
     TableName = 'database'
     Left = 48
-    Top = 136
+    Top = 128
   end
   object indexTable: TFDTable
     IndexFieldNames = 'readerId;magId'
@@ -94,7 +94,7 @@ object DataModule1: TDataModule1
     Top = 80
   end
   object news: TFDTable
-    IndexFieldNames = 'magId;no'
+    IndexFieldNames = 'no;magId'
     Connection = MagazineConnection
     UpdateOptions.UpdateTableName = 'news'
     TableName = 'news'
@@ -106,11 +106,10 @@ object DataModule1: TDataModule1
       ProviderFlags = [pfInUpdate, pfInWhere, pfInKey]
       Required = True
     end
-    object newsno: TIntegerField
-      FieldName = 'no'
-      Origin = 'no'
-      ProviderFlags = [pfInUpdate, pfInWhere, pfInKey]
-      Required = True
+    object newsnewsId: TIntegerField
+      FieldKind = fkCalculated
+      FieldName = 'newsId'
+      Calculated = True
     end
     object newsday: TDateField
       AutoGenerateValue = arDefault
@@ -201,5 +200,13 @@ object DataModule1: TDataModule1
       FieldName = 'enable'
       Origin = '`enable`'
     end
+  end
+  object image: TFDTable
+    IndexFieldNames = 'id'
+    Connection = MagazineConnection
+    UpdateOptions.UpdateTableName = 'image'
+    TableName = 'image'
+    Left = 48
+    Top = 184
   end
 end

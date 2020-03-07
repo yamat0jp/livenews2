@@ -29,7 +29,6 @@ type
     magListwriterId: TIntegerField;
     magListmagId: TIntegerField;
     newsmagId: TIntegerField;
-    newsno: TIntegerField;
     newsday: TDateField;
     newschanged: TBooleanField;
     newsenabled: TBooleanField;
@@ -46,6 +45,8 @@ type
     magday: TDateField;
     maglastDay: TDateField;
     magenable: TBooleanField;
+    image: TFDTable;
+    newsnewsId: TIntegerField;
     procedure DataModuleCreate(Sender: TObject);
   private
     { Private 宣言 }
@@ -66,6 +67,7 @@ type
     procedure deleteWriter(id: integer);
     procedure getView(id, num: integer; out Data: TJSONObject); overload;
     procedure getView(id: integer; out Data: TJSONObject); overload;
+    procedure viewList(id: integer; out Data: TJSONObject);
     procedure magazines(id: integer; out Data: TJSONObject);
     procedure magListAll(out Data: TJSONObject);
     procedure magData(id: integer; out Data: TJSONObject);
@@ -81,6 +83,9 @@ type
     procedure userView(id: integer; out Data: TJSONObject);
     function loginReader(data: TJSONObject): integer;
     function loginWriter(data: TJSONObject): integer;
+    procedure mainView(id: integer; out data: TJSONObject);
+    procedure imageView(id: integer; out data: TJSONObject);
+    function imageId(data: TJSONObject): integer;
   end;
 
 var
@@ -188,24 +193,26 @@ const
 begin
 //  FDQuery1.ExecSQL(tmp+'database(number int primary key, magId int, readerId int, writeId int);');
   FDQuery1.ExecSQL
-    (tmp + 'mag(magId int primary key, magName varchar(20), comment varchar(50), day date, lastDay date, enable bool);');
+    (tmp + 'mag(magId int primary key, magNum varchar(10), magName varchar(20), comment varchar(50), day date, lastDay date, enable bool);');
   FDQuery1.ExecSQL
     (tmp + 'writer(writerId int primary key, writer varchar(20), mail varchar(20), password varchar(20));');
   FDQuery1.ExecSQL
     (tmp + 'reader(readerId int primary key, reader varchar(20), mail varchar(20), password varchar(20));');
   FDQuery1.ExecSQL
-    (tmp + 'news(magId int, no int, day date, changed bool, enabled bool, primary key (magId,no));');
+    (tmp + 'news(magId int, newsId int, day date, changed bool, enabled bool, primary key (magId,newsId));');
   FDQuery1.ExecSQL
     (tmp + 'indexTable(readerId int, magId int, primary key (readerId,magId));');
   FDQuery1.ExecSQL
     (tmp + 'magList(writerId int, magId int, primary key (writerId,magId));');
-//  database.Open;
+  FDQuery1.ExecSQL(tmp+'image(id int primary key, writerId int, number int, name varchar(20), data text);');
+//  database.Open;      シャッフル可能にするため通し番号を付けたほうが良いらしい
   mag.Open;
   writer.Open;
   reader.Open;
   news.Open;
   indexTable.Open;
   magList.Open;
+  image.Open;
 end;
 
 procedure TDataModule1.deleteMagazine(id: integer);
@@ -299,6 +306,11 @@ begin
   data.AddPair('mag',ar);
 end;
 
+procedure TDataModule1.viewList(id: integer; out Data: TJSONObject);
+begin
+
+end;
+
 procedure TDataModule1.custData(id: integer; Data: TJSONObject);
 begin
   if writer.Locate('writerid', id) = true then
@@ -359,6 +371,26 @@ begin
   FDQuery1.Params.ParamByName('id').AsInteger := id;
   FDQuery1.Open;
   Data := makeTable(FDQuery1);
+end;
+
+function TDataModule1.imageId(data: TJSONObject): integer;
+var
+  writerId, number: integer;
+begin
+  writerId:=data.Values['id'].Value.ToInteger;
+  number:=data.Values['number'].Value.ToInteger;
+  if image.Locate('writerId;number',VarArrayOf([writerId,number])) = true then
+    result:=image.FieldByName('id').AsInteger;
+end;
+
+procedure TDataModule1.imageView(id: integer; out data: TJSONObject);
+begin
+  data:=TJSONObject.Create;
+  if image.Locate('id',id) = true then
+  begin
+    data.AddPair('name',image.FieldByName('name').AsString);
+    data.AddPair('data',image.FieldByName('data').AsString);
+  end;
 end;
 
 function TDataModule1.loginReader(data: TJSONObject): integer;
@@ -462,6 +494,25 @@ begin
   Data.AddPair('enable', val);
 end;
 
+procedure TDataModule1.mainView(id: integer; out data: TJSONObject);
+begin
+  data:=TJSONObject.Create;
+  FDQuery1.SQL.Clear;
+  FDQuery1.SQL.Add('select * from news,magId where news.magId = magName.magId');
+  FDQuery1.SQL.Add(' and magId = :id order by day;');
+  FDQUery1.Params.ParamByName('id').AsInteger:=id;
+  while FDQUery1.Eof = false do
+  begin
+    if FDQuery1.FieldByName('enebled').AsBoolean = true then
+    begin
+      if FDQuery1.FieldByName('changed').AsBoolean = true then
+        data.AddPair('changed',TJSONTrue.Create);
+      data.AddPair('',FDQuery1.FieldByName('').AsString);
+    end;
+    FDQuery1.Next;
+  end;
+end;
+
 procedure TDataModule1.magazines(id: integer; out Data: TJSONObject);
 var
   d: TJSONObject;
@@ -501,27 +552,35 @@ end;
 
 function TDataModule1.makeTable(Sender: TObject): TJSONObject;
 var
+  day: string;
   blob: TStream;
   mem: TStringList;
+  ar: TJSONArray;
+  d: TJSONObject;
 begin
-  result := TJSONObject.Create;
+  ar:=TJSONArray.Create;
   mem := TStringList.Create;
   with Sender as TFDQuery do
   begin
     First;
     while Eof = false do
     begin
+      d:=TJSONObject.Create;
+      ar.Add(d);
+      day := FieldByName('day').AsString;
       if FieldByName('updated').AsBoolean = true then
-        result.AddPair('hint', Format('この記事は更新されました:(%s)日.',
-          [FieldByName('day').AsString]));
+        d.AddPair('hint', Format('この記事は更新されました:(%s)日.',[day]));
       blob := CreateBlobStream(FieldByName('file'), bmRead);
       mem.LoadFromStream(blob);
       blob.Free;
-      result.AddPair('text', mem.Text);
+      d.AddPair('text',mem.Text);
+      d.AddPair('day',day);
       Next;
     end;
   end;
   mem.Free;
+  result := TJSONObject.Create;
+  result.AddPair('news',ar);
 end;
 
 procedure TDataModule1.postMessage(id: integer; Data: TJSONObject);
