@@ -352,7 +352,7 @@ begin
   ma:=Data.Values['mail'].Value;
   pa:=Data.Values['password'].Value;
   if reader.Locate('mail;password',VarArrayOf([ma,pa])) = true then
-    result:=reader.FieldByName('id').AsInteger
+    result:=reader.FieldByName('readerid').AsInteger
   else
     result:=0;
 end;
@@ -364,7 +364,7 @@ begin
   ma:=Data.Values['mail'].Value;
   pa:=Data.Values['password'].Value;
   if writer.Locate('mail;password',VarArrayOf([ma,pa])) = true then
-    result:=writer.FieldByName('id').AsInteger
+    result:=writer.FieldByName('writerid').AsInteger
   else
     result:=0;
 end;

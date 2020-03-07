@@ -140,7 +140,7 @@ object WebModule1: TWebModule1
       '    {{/items}}'
       '    <hr>'
       '    <p>'#26032#35215#30331#37682
-      '    <form method="post" action="/regist">'
+      '    <form method="post" action="/reader/data">'
       '        <input type="text" name="reader">'
       '        <input type="text" name="mail">'
       '        <input type="password" name="password">'
