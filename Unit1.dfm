@@ -4,31 +4,11 @@ object DataModule1: TDataModule1
   Height = 257
   Width = 299
   object database: TFDTable
-    IndexFieldNames = 'no'
     Connection = MagazineConnection
     UpdateOptions.UpdateTableName = 'database'
     TableName = 'database'
     Left = 48
     Top = 128
-  end
-  object indexTable: TFDTable
-    IndexFieldNames = 'readerId;magId'
-    Connection = MagazineConnection
-    UpdateOptions.UpdateTableName = 'indexTable'
-    TableName = 'indexTable'
-    Left = 208
-    Top = 80
-    object indexTablereaderId: TIntegerField
-      FieldName = 'readerId'
-      Origin = 'readerId'
-      ProviderFlags = [pfInUpdate, pfInWhere, pfInKey]
-      Required = True
-    end
-    object indexTablemagId: TIntegerField
-      AutoGenerateValue = arDefault
-      FieldName = 'magId'
-      Origin = 'magId'
-    end
   end
   object reader: TFDTable
     IndexFieldNames = 'readerId'
@@ -57,25 +37,6 @@ object DataModule1: TDataModule1
       AutoGenerateValue = arDefault
       FieldName = 'password'
       Origin = '`password`'
-    end
-  end
-  object magList: TFDTable
-    IndexFieldNames = 'writerId;magId'
-    Connection = MagazineConnection
-    UpdateOptions.UpdateTableName = 'magList'
-    TableName = 'magList'
-    Left = 128
-    Top = 128
-    object magListwriterId: TIntegerField
-      FieldName = 'writerId'
-      Origin = 'writerId'
-      ProviderFlags = [pfInUpdate, pfInWhere, pfInKey]
-      Required = True
-    end
-    object magListmagId: TIntegerField
-      AutoGenerateValue = arDefault
-      FieldName = 'magId'
-      Origin = 'magId'
     end
   end
   object MagazineConnection: TFDConnection
@@ -208,11 +169,32 @@ object DataModule1: TDataModule1
     end
   end
   object image: TFDTable
-    IndexFieldNames = 'id'
+    IndexFieldNames = 'writerId;number'
     Connection = MagazineConnection
     UpdateOptions.UpdateTableName = 'image'
     TableName = 'image'
     Left = 48
     Top = 184
+    object imagewriterId: TIntegerField
+      AutoGenerateValue = arDefault
+      FieldName = 'writerId'
+      Origin = 'writerId'
+    end
+    object imagenumber: TIntegerField
+      AutoGenerateValue = arDefault
+      FieldName = 'number'
+      Origin = '`number`'
+    end
+    object imagename: TWideStringField
+      AutoGenerateValue = arDefault
+      FieldName = 'name'
+      Origin = '`name`'
+    end
+    object imagedata: TWideMemoField
+      AutoGenerateValue = arDefault
+      FieldName = 'data'
+      Origin = '`data`'
+      BlobType = ftWideMemo
+    end
   end
 end

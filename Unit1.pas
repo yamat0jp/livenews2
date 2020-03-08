@@ -14,9 +14,7 @@ uses
 type
   TDataModule1 = class(TDataModule)
     database: TFDTable;
-    indexTable: TFDTable;
     reader: TFDTable;
-    magList: TFDTable;
     MagazineConnection: TFDConnection;
     FDQuery1: TFDQuery;
     news: TFDTable;
@@ -26,8 +24,6 @@ type
     writerwriter: TWideStringField;
     writermail: TWideStringField;
     writerpassword: TWideStringField;
-    magListwriterId: TIntegerField;
-    magListmagId: TIntegerField;
     newsmagId: TIntegerField;
     newsday: TDateField;
     newschanged: TBooleanField;
@@ -36,8 +32,6 @@ type
     readerreader: TWideStringField;
     readermail: TWideStringField;
     readerpassword: TWideStringField;
-    indexTablereaderId: TIntegerField;
-    indexTablemagId: TIntegerField;
     mag: TFDTable;
     magmagId: TIntegerField;
     magmagName: TWideStringField;
@@ -48,6 +42,10 @@ type
     image: TFDTable;
     newsnewsId: TIntegerField;
     magmagNum: TWideStringField;
+    imagewriterId: TIntegerField;
+    imagenumber: TIntegerField;
+    imagename: TWideStringField;
+    imagedata: TWideMemoField;
     procedure DataModuleCreate(Sender: TObject);
   private
     { Private 宣言 }
@@ -79,14 +77,14 @@ type
     procedure postMessage(id: integer; Data: TJSONObject);
     procedure createWriterId(Data: TJSONObject);
     procedure readerData(id: integer; out Data: TJSONObject);
-    procedure titleView(id: integer;out Data: TJSONObject);
+    procedure titleView(id: integer; out Data: TJSONObject);
     procedure updateWriterId(id: integer; Data: TJSONObject);
     procedure userView(id: integer; out Data: TJSONObject);
-    function loginReader(data: TJSONObject): integer;
-    function loginWriter(data: TJSONObject): integer;
-    procedure mainView(id: integer; out data: TJSONObject);
-    procedure imageView(id: integer; out data: TJSONObject);
-    function imageId(data: TJSONObject): integer;
+    function loginReader(Data: TJSONObject): integer;
+    function loginWriter(Data: TJSONObject): integer;
+    procedure mainView(id: integer; out Data: TJSONObject);
+    procedure imageView(id: integer; out Data: TJSONObject);
+    function imageId(Data: TJSONObject): integer;
   end;
 
 var
@@ -110,7 +108,7 @@ begin
   na := Data.Values['magName'].Value;
   com := Data.Values['comment'].Value;
   mag.AppendRecord([i, na, com, Date, Date, true]);
-  magList.AppendRecord([id, i]);
+  database.AppendRecord([id, i, 0]);
 end;
 
 procedure TDataModule1.backNumber(id: integer; out Data: TJSONObject);
@@ -160,14 +158,14 @@ begin
   i := FDQuery1.FieldByName('count').AsInteger + 1;
   mag.Append;
   mag.FieldByName('magId').AsInteger := id;
-  mag.FieldByName('magNum').AsString := 'MAG'+i.ToString;
+  mag.FieldByName('magNum').AsString := 'MAG' + i.ToString;
   mag.FieldByName('day').AsDateTime := Date;
   mag.FieldByName('lastDay').AsDateTime := Date;
   mag.FieldByName('magName').AsString := Data.Values['magName'].Value;
   mag.FieldByName('comment').AsString := Data.Values['comment'].Value;
   mag.FieldByName('enable').AsString := Data.Values['enable'].Value;
   mag.Post;
-  magList.AppendRecord([id, i]);
+  database.AppendRecord([id, i, 0]);
 end;
 
 function TDataModule1.createReaderId(Data: TJSONObject): integer;
@@ -178,22 +176,23 @@ begin
   na := Data.Values['name'].Value;
   ma := Data.Values['mail'].Value;
   pa := Data.Values['password'].Value;
-  if reader.Locate('mail',ma) = false then
+  if reader.Locate('mail', ma) = false then
   begin
     FDQuery1.Open('select MAX(readerid) as id from reader;');
     i := FDQuery1.FieldByName('id').AsInteger + 1;
     reader.AppendRecord([i, na, ma, pa]);
-    result:=i;
+    result := i;
   end
   else
-    result:=0;
+    result := 0;
 end;
 
 procedure TDataModule1.DataModuleCreate(Sender: TObject);
 const
   tmp = 'create table if not exists ';
 begin
-//  FDQuery1.ExecSQL(tmp+'database(number int primary key, magId int, readerId int, writeId int);');
+  FDQuery1.ExecSQL
+    (tmp + 'database(serial int primary key, magId int, readerId int, writerId int);');
   FDQuery1.ExecSQL
     (tmp + 'mag(magId int primary key, magNum varchar(10), magName varchar(20), comment varchar(50), day date, lastDay date, enable bool);');
   FDQuery1.ExecSQL
@@ -203,17 +202,12 @@ begin
   FDQuery1.ExecSQL
     (tmp + 'news(magId int, newsId int, day date, changed bool, enabled bool, primary key (magId,newsId));');
   FDQuery1.ExecSQL
-    (tmp + 'indexTable(readerId int, magId int, primary key (readerId,magId));');
-  FDQuery1.ExecSQL
-    (tmp + 'magList(writerId int, magId int, primary key (writerId,magId));');
-  FDQuery1.ExecSQL(tmp+'image(id int primary key, writerId int, number int, name varchar(20), data text);');
-//  database.Open;      シャッフル可能にするため通し番号を付けたほうが良いらしい
+    (tmp + 'image(writerId int, number int, name varchar(20), data text, primary key (writerId,number));');
+  database.Open;
   mag.Open;
   writer.Open;
   reader.Open;
   news.Open;
-  indexTable.Open;
-  magList.Open;
   image.Open;
 end;
 
@@ -221,16 +215,15 @@ procedure TDataModule1.deleteMagazine(id: integer);
   procedure main(Sender: TObject);
   begin
     with Sender as TFDTable do
-      while Locate('magid',id) = true do
+      while Locate('magid', id) = true do
         Delete;
   end;
 
 begin
-  if mag.Locate('magId',id) = true then
+  if mag.Locate('magId', id) = true then
     mag.Delete;
   main(news);
-//  main(database);
-  main(indexTable);
+  main(database);
 end;
 
 procedure TDataModule1.deleteNumber(id, num: integer);
@@ -251,25 +244,26 @@ begin
   if reader.Locate('readerid;reader;mail;password', VarArrayOf([id, na, ma, pa])
     ) = true then
     reader.Delete;
-  while indexTable.Locate('readerid',id) = true do
-    indexTable.Delete;
+  while database.Locate('readerid', id) = true do
+    database.Delete;
 end;
 
 procedure TDataModule1.deleteWriter(var id: integer);
 begin
-  if writer.Locate('writerid',id) = true then
+  if writer.Locate('writerid', id) = true then
     writer.Delete;
-  while magList.Locate('writerid',id) = true do
+  while database.Locate('writerid', id) = true do
   begin
-    deleteMagazine(magList.FieldByName('magid').AsInteger);
-    magList.Delete;
+    deleteMagazine(database.FieldByName('magid').AsInteger);
+    database.Delete;
   end;
-  id:=0;
+  id := 0;
 end;
 
 function TDataModule1.existsMail(mail: string): Boolean;
 begin
-  result := (writer.Locate('mail',mail) = true)or(reader.Locate('mail',mail) = true);
+  result := (writer.Locate('mail', mail) = true) or
+    (reader.Locate('mail', mail) = true);
 end;
 
 procedure TDataModule1.readerData(id: integer; out Data: TJSONObject);
@@ -299,7 +293,7 @@ begin
     list.Add(FDQuery1.FieldByName('magid').AsInteger);
     FDQuery1.Next;
   end;
-  ar:=TJSONArray.Create;
+  ar := TJSONArray.Create;
   for i in list do
   begin
     titleView(i, d);
@@ -307,7 +301,7 @@ begin
   end;
   list.Free;
   Data := TJSONObject.Create;
-  data.AddPair('mag',ar);
+  Data.AddPair('mag', ar);
 end;
 
 procedure TDataModule1.viewList(id: integer; out Data: TJSONObject);
@@ -377,48 +371,48 @@ begin
   Data := makeTable(FDQuery1);
 end;
 
-function TDataModule1.imageId(data: TJSONObject): integer;
+function TDataModule1.imageId(Data: TJSONObject): integer;
 var
   writerId, number: integer;
 begin
-  writerId:=data.Values['id'].Value.ToInteger;
-  number:=data.Values['number'].Value.ToInteger;
-  if image.Locate('writerId;number',VarArrayOf([writerId,number])) = true then
-    result:=image.FieldByName('id').AsInteger;
+  writerId := Data.Values['id'].Value.ToInteger;
+  number := Data.Values['number'].Value.ToInteger;
+  if image.Locate('writerId;number', VarArrayOf([writerId, number])) = true then
+    result := image.FieldByName('id').AsInteger;
 end;
 
-procedure TDataModule1.imageView(id: integer; out data: TJSONObject);
+procedure TDataModule1.imageView(id: integer; out Data: TJSONObject);
 begin
-  data:=TJSONObject.Create;
-  if image.Locate('id',id) = true then
+  Data := TJSONObject.Create;
+  if image.Locate('id', id) = true then
   begin
-    data.AddPair('name',image.FieldByName('name').AsString);
-    data.AddPair('data',image.FieldByName('data').AsString);
+    Data.AddPair('name', image.FieldByName('name').AsString);
+    Data.AddPair('data', image.FieldByName('data').AsString);
   end;
 end;
 
-function TDataModule1.loginReader(data: TJSONObject): integer;
+function TDataModule1.loginReader(Data: TJSONObject): integer;
 var
-  ma,pa: string;
+  ma, pa: string;
 begin
-  ma:=Data.Values['mail'].Value;
-  pa:=Data.Values['password'].Value;
-  if reader.Locate('mail;password',VarArrayOf([ma,pa])) = true then
-    result:=reader.FieldByName('readerid').AsInteger
+  ma := Data.Values['mail'].Value;
+  pa := Data.Values['password'].Value;
+  if reader.Locate('mail;password', VarArrayOf([ma, pa])) = true then
+    result := reader.FieldByName('readerid').AsInteger
   else
-    result:=0;
+    result := 0;
 end;
 
-function TDataModule1.loginWriter(data: TJSONObject): integer;
+function TDataModule1.loginWriter(Data: TJSONObject): integer;
 var
-  ma,pa: string;
+  ma, pa: string;
 begin
-  ma:=Data.Values['mail'].Value;
-  pa:=Data.Values['password'].Value;
-  if writer.Locate('mail;password',VarArrayOf([ma,pa])) = true then
-    result:=writer.FieldByName('writerid').AsInteger
+  ma := Data.Values['mail'].Value;
+  pa := Data.Values['password'].Value;
+  if writer.Locate('mail;password', VarArrayOf([ma, pa])) = true then
+    result := writer.FieldByName('writerid').AsInteger
   else
-    result:=0;
+    result := 0;
 end;
 
 procedure TDataModule1.magData(id: integer; out Data: TJSONObject);
@@ -435,8 +429,9 @@ begin
     Data.AddPair('day', FDQuery1.FieldByName('day').AsString);
     Data.AddPair('last', FDQuery1.FieldByName('lastDay').AsString);
     FDQuery1.SQL.Clear;
-    FDQuery1.SQL.Add('select COUNT(*) as count from indextable where magid = :id;');
-    FDQuery1.ParamByName('id').AsInteger:=id;
+    FDQuery1.SQL.Add
+      ('select COUNT(*) as count from indextable where magid = :id;');
+    FDQuery1.ParamByName('id').AsInteger := id;
     FDQuery1.Open;
     Data.AddPair('count', FDQuery1.FieldByName('count').AsString);
   end;
@@ -446,27 +441,27 @@ function TDataModule1.magid(name: string): integer;
 var
   v: Variant;
 begin
-  v:=mag.Lookup('magNum', name, 'magid');
+  v := mag.Lookup('magNum', name, 'magid');
   if VarIsNull(v) = true then
-    result:=0
+    result := 0
   else
-    result :=v;
+    result := v;
 end;
 
 procedure TDataModule1.magIdOff(id, magid: integer);
 begin
-  if indexTable.Locate('readerId;magId', VarArrayOf([id, magid])) = true then
-    indexTable.Delete;
+  if database.Locate('readerId;magId', VarArrayOf([id, magid])) = true then
+    database.Delete;
 end;
 
 procedure TDataModule1.magIdOn(id, magid: integer);
 begin
   if (reader.Locate('readerid', id) = true) and
     (mag.Locate('magid', magid) = true) then
-    indexTable.AppendRecord([id, magid]);
+    database.AppendRecord([mag.FieldByName('writerid').AsInteger, magid, id]);
 end;
 
-procedure TDataModule1.magListAll(id: integer;out Data: TJSONObject);
+procedure TDataModule1.magListAll(id: integer; out Data: TJSONObject);
 var
   js: TJSONObject;
   ar: TJSONArray;
@@ -476,30 +471,32 @@ var
 begin
   mag.First;
   ar := TJSONArray.Create;
-  FDQuery1.Open('select magId,COUNT(*) as count from indexTable group by magId');
+  FDQuery1.Open
+    ('select magId,COUNT(*) as count from indexTable group by magId');
   while mag.Eof = false do
   begin
-    i:=mag.FieldByName('magId').AsInteger;
-    v:=FDQuery1.Lookup('magId',i,'count');
+    i := mag.FieldByName('magId').AsInteger;
+    v := FDQuery1.Lookup('magId', i, 'count');
     if VarIsNull(v) = true then
-      v:=0;
+      v := 0;
     js := TJSONObject.Create;
-    js.AddPair('magNum',mag.FieldByName('magNum').AsString);
+    js.AddPair('magNum', mag.FieldByName('magNum').AsString);
     js.AddPair('magName', mag.FieldByName('magName').AsString);
     js.AddPair('comment', mag.FieldByName('comment').AsString);
     js.AddPair('day', mag.FieldByName('day').AsString);
     js.AddPair('lastDay', mag.FieldByName('lastDay').AsString);
-    js.AddPair('count',v);
-    v:=magList.Lookup('magId',i,'writerId');
-    v:=writer.Lookup('writerId',v,'writer');
+    js.AddPair('count', v);
+    v := database.Lookup('magId', i, 'writerId');
+    v := writer.Lookup('writerId', v, 'writer');
     if VarIsNull(v) = true then
-      js.AddPair('writer',TJSONFalse.Create)
+      js.AddPair('writer', TJSONFalse.Create)
     else
-      js.AddPair('writer',v);
-    if (id = 0)or(indexTable.Locate('readerId;magid',VarArrayOf([id,i])) = false) then
-      js.AddPair('fun',TJSONFalse.Create)
+      js.AddPair('writer', v);
+    if (id = 0) or (database.Locate('readerId;magid', VarArrayOf([id, i]))
+      = false) then
+      js.AddPair('fun', TJSONFalse.Create)
     else
-      js.AddPair('fun',TJSONTrue.Create);
+      js.AddPair('fun', TJSONTrue.Create);
     ar.Add(js);
     mag.Next;
   end;
@@ -515,20 +512,20 @@ begin
   Data.AddPair('enable', val);
 end;
 
-procedure TDataModule1.mainView(id: integer; out data: TJSONObject);
+procedure TDataModule1.mainView(id: integer; out Data: TJSONObject);
 begin
-  data:=TJSONObject.Create;
+  Data := TJSONObject.Create;
   FDQuery1.SQL.Clear;
   FDQuery1.SQL.Add('select * from news,magId where news.magId = magName.magId');
   FDQuery1.SQL.Add(' and magId = :id order by day;');
-  FDQUery1.Params.ParamByName('id').AsInteger:=id;
-  while FDQUery1.Eof = false do
+  FDQuery1.Params.ParamByName('id').AsInteger := id;
+  while FDQuery1.Eof = false do
   begin
     if FDQuery1.FieldByName('enebled').AsBoolean = true then
     begin
       if FDQuery1.FieldByName('changed').AsBoolean = true then
-        data.AddPair('changed',TJSONTrue.Create);
-      data.AddPair('',FDQuery1.FieldByName('').AsString);
+        Data.AddPair('changed', TJSONTrue.Create);
+      Data.AddPair('', FDQuery1.FieldByName('').AsString);
     end;
     FDQuery1.Next;
   end;
@@ -542,13 +539,13 @@ var
   list: TList<integer>;
   i: integer;
 begin
-  d:=data;
+  d := Data;
   FDQuery1.SQL.Clear;
   FDQuery1.SQL.Add('select * from maglist where writerid = :id;');
   FDQuery1.Params.ParamByName('id').AsInteger := id;
   FDQuery1.Open;
   ar := TJSONArray.Create;
-  list:=TList<integer>.Create;
+  list := TList<integer>.Create;
   while FDQuery1.Eof = false do
   begin
     list.Add(FDQuery1.FieldByName('magId').AsInteger);
@@ -556,7 +553,7 @@ begin
   end;
   for i in list do
   begin
-    magData(i,d);
+    magData(i, d);
     ar.Add(d);
   end;
   list.Free;
@@ -579,29 +576,29 @@ var
   ar: TJSONArray;
   d: TJSONObject;
 begin
-  ar:=TJSONArray.Create;
+  ar := TJSONArray.Create;
   mem := TStringList.Create;
   with Sender as TFDQuery do
   begin
     First;
     while Eof = false do
     begin
-      d:=TJSONObject.Create;
+      d := TJSONObject.Create;
       ar.Add(d);
       day := FieldByName('day').AsString;
       if FieldByName('updated').AsBoolean = true then
-        d.AddPair('hint', Format('この記事は更新されました:(%s)日.',[day]));
+        d.AddPair('hint', Format('この記事は更新されました:(%s)日.', [day]));
       blob := CreateBlobStream(FieldByName('file'), bmRead);
       mem.LoadFromStream(blob);
       blob.Free;
-      d.AddPair('text',mem.Text);
-      d.AddPair('day',day);
+      d.AddPair('text', mem.Text);
+      d.AddPair('day', day);
       Next;
     end;
   end;
   mem.Free;
   result := TJSONObject.Create;
-  result.AddPair('news',ar);
+  result.AddPair('news', ar);
 end;
 
 procedure TDataModule1.postMessage(id: integer; Data: TJSONObject);
@@ -636,13 +633,13 @@ begin
   end;
 end;
 
-procedure TDataModule1.titleView(id: integer;out Data: TJSONObject);
+procedure TDataModule1.titleView(id: integer; out Data: TJSONObject);
 var
   d: TJSONObject;
   i: integer;
 begin
-  Data:=TJSONObject.Create;
-  d:=Data;
+  Data := TJSONObject.Create;
+  d := Data;
   FDQuery1.SQL.Clear;
   FDQuery1.SQL.Add('select * from mag where magid = :id;');
   FDQuery1.Params.ParamByName('id').AsInteger := id;
@@ -660,21 +657,21 @@ function TDataModule1.updateReaderId(Data: TJSONObject): Boolean;
 var
   na, ma, pa: string;
 begin
-  na:=Data.Values['reader'].Value;
-  ma:=Data.Values['mail'].Value;
-  pa:=data.Values['password'].Value;
-  if reader.Locate('id',data.Values['id'].Value.ToInteger) = true then
-  with reader do
-  begin
-    Edit;
-    FieldByName('reader').AsString:=na;
-    FieldByName('mail').AsString:=ma;
-    FieldByName('password').AsString:=pa;
-    Post;
-    result:=true;
-  end
+  na := Data.Values['reader'].Value;
+  ma := Data.Values['mail'].Value;
+  pa := Data.Values['password'].Value;
+  if reader.Locate('id', Data.Values['id'].Value.ToInteger) = true then
+    with reader do
+    begin
+      Edit;
+      FieldByName('reader').AsString := na;
+      FieldByName('mail').AsString := ma;
+      FieldByName('password').AsString := pa;
+      Post;
+      result := true;
+    end
   else
-    result:=false;
+    result := false;
 end;
 
 procedure TDataModule1.updateWriterId(id: integer; Data: TJSONObject);
