@@ -1,0 +1,48 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{124FFD4D-DD1D-458C-AA3A-FC357486CB78}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="newstable.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="tool\magbot.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="newstable">
+        <MSBuild Projects="newstable.dproj"/>
+    </Target>
+    <Target Name="newstable:Clean">
+        <MSBuild Projects="newstable.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="newstable:Make">
+        <MSBuild Projects="newstable.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="magbot">
+        <MSBuild Projects="tool\magbot.dproj"/>
+    </Target>
+    <Target Name="magbot:Clean">
+        <MSBuild Projects="tool\magbot.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="magbot:Make">
+        <MSBuild Projects="tool\magbot.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="newstable;magbot"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="newstable:Clean;magbot:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="newstable:Make;magbot:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>
