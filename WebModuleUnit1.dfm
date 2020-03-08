@@ -69,6 +69,7 @@ object WebModule1: TWebModule1
       OnAction = WebModule1logoutAction
     end
     item
+      MethodType = mtGet
       Name = 'mainView'
       PathInfo = '/reader/top'
       OnAction = WebModule1mainViewAction
@@ -101,7 +102,8 @@ object WebModule1: TWebModule1
       '        <p>'#12354#12394#12383#12398#26412#26842#12391#12377
       '    {{#mag}}'
       '        <table border=1>'
-      '        <th>{{name}} writed by {{writer}}<ht>'
+      '        <th>{{magName}} writed by {{writer}}<ht>'
+      '        <tr><td>{{comment}}</td></tr>'
       '        <tr><td>{{day}}</td></tr>'
       '        <tr><td>{{lastDay}}</td></tr>'
       '        {{^enable}}<tr><td>'#20241#21002#20013'</td></tr>{{/enable}}'
@@ -299,14 +301,15 @@ object WebModule1: TWebModule1
       '</head>'
       '<body>'
       '        <p>'#12491#12517#12540#12473#12398#25968#12293#12434#12362#27005#12375#12415#12367#12384#12373#12356
-      '        {{#news}}'
+      '        {{#mag}}'
       '        <hr>'
       '                <p>[{{magName}}] ({{day}})'
+      '                <p>by {{writer}}'
       '                {{text}}'
-      '                {{#updated}}'
+      '                {{#changed}}'
       '                        <p>{{hint}}'
-      '                {{/updated}}'
-      '        {{/news}}'
+      '                {{/changed}}'
+      '        {{/mag}}'
       '</body>'
       '</html>')
     Left = 240

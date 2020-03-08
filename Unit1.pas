@@ -24,10 +24,6 @@ type
     writerwriter: TWideStringField;
     writermail: TWideStringField;
     writerpassword: TWideStringField;
-    newsmagId: TIntegerField;
-    newsday: TDateField;
-    newschanged: TBooleanField;
-    newsenabled: TBooleanField;
     readerreaderId: TIntegerField;
     readerreader: TWideStringField;
     readermail: TWideStringField;
@@ -40,7 +36,6 @@ type
     maglastDay: TDateField;
     magenable: TBooleanField;
     image: TFDTable;
-    newsnewsId: TIntegerField;
     magmagNum: TWideStringField;
     imagewriterId: TIntegerField;
     imagenumber: TIntegerField;
@@ -50,6 +45,11 @@ type
     dbmagId: TIntegerField;
     dbreaderId: TIntegerField;
     dbwriterId: TIntegerField;
+    newsmagId: TIntegerField;
+    newsnewsId: TIntegerField;
+    newsday: TDateField;
+    newschanged: TBooleanField;
+    newsenabled: TBooleanField;
     procedure DataModuleCreate(Sender: TObject);
   private
     { Private êÈåæ }
@@ -81,7 +81,8 @@ type
     procedure postMessage(id: integer; Data: TJSONObject);
     procedure createWriterId(Data: TJSONObject);
     procedure readerData(id: integer; out Data: TJSONObject);
-    procedure titleView(id: integer; out Data: TJSONObject);
+    function titleView(magid, writerId: integer; out Data: TJSONObject)
+      : Boolean;
     procedure updateWriterId(id: integer; Data: TJSONObject);
     procedure userView(id: integer; out Data: TJSONObject);
     function loginReader(Data: TJSONObject): integer;
@@ -204,7 +205,7 @@ begin
   FDQuery1.ExecSQL
     (tmp + 'reader(readerId int primary key, reader varchar(20), mail varchar(20), password varchar(20));');
   FDQuery1.ExecSQL
-    (tmp + 'news(magId int, newsId int, day date, changed bool, enabled bool, primary key (magId,newsId));');
+    (tmp + 'news(magId int, newsId int, files text, day date, changed bool, enabled bool, primary key (magId,newsId));');
   FDQuery1.ExecSQL
     (tmp + 'image(writerId int, number int, name varchar(20), data text, primary key (writerId,number));');
   DB.Open;
@@ -275,28 +276,22 @@ end;
 
 procedure TDataModule1.userView(id: integer; out Data: TJSONObject);
 var
-  i: integer;
-  list: TList<integer>;
   ar: TJSONArray;
   d: TJSONObject;
 begin
-  list := TList<integer>.Create;
+  ar := TJSONArray.Create;
   FDQuery1.SQL.Clear;
-  FDQuery1.SQL.Add('select * from indexTable where readerid = :id;');
+  FDQuery1.SQL.Add('select * from db where readerid = :id;');
   FDQuery1.Params.ParamByName('id').AsInteger := id;
   FDQuery1.Open;
-  while FDQuery1.Eof = false do
-  begin
-    list.Add(FDQuery1.FieldByName('magid').AsInteger);
-    FDQuery1.Next;
-  end;
-  ar := TJSONArray.Create;
-  for i in list do
-  begin
-    titleView(i, d);
-    ar.Add(d);
-  end;
-  list.Free;
+  with FDQuery1 do
+    while Eof = false do
+    begin
+      if titleView(FieldByName('magid').AsInteger, FieldByName('writerId')
+        .AsInteger, d) = true then
+        ar.Add(d);
+      Next;
+    end;
   Data := TJSONObject.Create;
   Data.AddPair('mag', ar);
 end;
@@ -317,23 +312,27 @@ end;
 
 procedure TDataModule1.custView(id: integer; out Data: TJSONObject);
 var
-  i: integer;
-  list: TList<integer>;
+  d: TJSONObject;
+  ar: TJSONArray;
 begin
   Data := TJSONObject.Create;
-  list := TList<integer>.Create;
-  FDQuery1.SQL.Clear;
-  FDQuery1.SQL.Add('select * from maglist where readerid = :id;');
-  FDQuery1.Params.ParamByName('id').AsInteger := id;
-  FDQuery1.Open;
-  while FDQuery1.Eof = false do
+  ar := TJSONArray.Create;
+  with FDQuery1 do
   begin
-    list.Add(FDQuery1.FieldByName('magid').AsInteger);
-    FDQuery1.Next;
+    SQL.Clear;
+    SQL.Add('select * from db where readerid = :id;');
+    Params.ParamByName('id').AsInteger := id;
+    Open;
+    while Eof = false do
+    begin
+      d := TJSONObject.Create;
+      if titleView(FieldByName('magid').AsInteger, FieldByName('writerId')
+        .AsInteger, d) = true then
+        ar.Add(d);
+      Next;
+    end;
   end;
-  for i in list do
-    titleView(i, Data);
-  list.Free;
+  Data.AddPair('mag', ar);
 end;
 
 procedure TDataModule1.getView(id, num: integer; out Data: TJSONObject);
@@ -341,7 +340,7 @@ begin
   with FDQuery1.SQL do
   begin
     Clear;
-    Add('select updated,day,file from news');
+    Add('select changed,day,file from news');
     Add(' where magId = :id and newsId = :num');
     Add(' order by day;');
   end;
@@ -356,12 +355,14 @@ end;
 
 procedure TDataModule1.getView(id: integer; out Data: TJSONObject);
 begin
+  if id = 0 then
+    Exit;
   with FDQuery1.SQL do
   begin
     Clear;
-    Add('select updated,day,file from indexTable,news');
-    Add(' where readerId = :id and indexTable.magId = news.magId');
-    Add(' and enabled = true order by day;');
+    Add('select magName,writer,changed,news.day,files from db,news,mag,writer');
+    Add(' where db.readerId = :id and db.magId = mag.magId and db.magId = news.magId');
+    Add(' and db.writerId = writer.writerId and enabled = true order by news.day;');
   end;
   FDQuery1.Params.ParamByName('id').AsInteger := id;
   FDQuery1.Open;
@@ -452,10 +453,16 @@ begin
 end;
 
 procedure TDataModule1.magIdOn(id, magid: integer);
+var
+  i: integer;
+  v: Variant;
 begin
-  if (reader.Locate('readerid', id) = true) and
-    (mag.Locate('magid', magid) = true) then
-    DB.AppendRecord([mag.FieldByName('writerid').AsInteger, magid, id]);
+  v := DB.Lookup('magId', magid, 'writerId');
+  if VarIsNull(v) = true then
+    v := 0;
+  FDQuery1.Open('select MAX(serial) as ser from db;');
+  i := FDQuery1.FieldByName('ser').AsInteger + 1;
+  DB.AppendRecord([i, v, magid, id]);
 end;
 
 procedure TDataModule1.magListAll(id: integer; out Data: TJSONObject);
@@ -469,7 +476,7 @@ begin
   mag.First;
   ar := TJSONArray.Create;
   FDQuery1.Open
-    ('select magId,COUNT(*) as count from indexTable group by magId');
+    ('select magId,COUNT(*) as count from db where readerId <> 0 group by magId');
   while mag.Eof = false do
   begin
     i := mag.FieldByName('magId').AsInteger;
@@ -512,20 +519,15 @@ end;
 procedure TDataModule1.mainView(id: integer; out Data: TJSONObject);
 begin
   Data := TJSONObject.Create;
-  FDQuery1.SQL.Clear;
-  FDQuery1.SQL.Add('select * from news,magId where news.magId = magName.magId');
-  FDQuery1.SQL.Add(' and magId = :id order by day;');
-  FDQuery1.Params.ParamByName('id').AsInteger := id;
-  while FDQuery1.Eof = false do
+  with FDQuery1.SQL do
   begin
-    if FDQuery1.FieldByName('enebled').AsBoolean = true then
-    begin
-      if FDQuery1.FieldByName('changed').AsBoolean = true then
-        Data.AddPair('changed', TJSONTrue.Create);
-      Data.AddPair('', FDQuery1.FieldByName('').AsString);
-    end;
-    FDQuery1.Next;
+    Clear;
+    Add('select nagName,writer,text,day,changed from db,news,mag,writer');
+    Add(' where db.newsId = news.newsId and db.magId = mag.magId and');
+    Add(' db.writerId = writer.writerId and db.reader.id = :id order by day;');
   end;
+  FDQuery1.Params.ParamByName('id').AsInteger := id;
+  Data := makeTable(FDQuery1);
 end;
 
 procedure TDataModule1.magazines(id: integer; out Data: TJSONObject);
@@ -583,11 +585,13 @@ begin
       d := TJSONObject.Create;
       ar.Add(d);
       day := FieldByName('day').AsString;
-      if FieldByName('updated').AsBoolean = true then
+      if FieldByName('changed').AsBoolean = true then
         d.AddPair('hint', Format('Ç±ÇÃãLéñÇÕçXêVÇ≥ÇÍÇ‹ÇµÇΩ:(%s)ì˙.', [day]));
-      blob := CreateBlobStream(FieldByName('file'), bmRead);
+      blob := CreateBlobStream(FieldByName('files'), bmRead);
       mem.LoadFromStream(blob);
       blob.Free;
+      d.AddPair('magName', FieldByName('magName').AsString);
+      d.AddPair('writer', FieldByName('writer').AsString);
       d.AddPair('text', mem.Text);
       d.AddPair('day', day);
       Next;
@@ -595,7 +599,7 @@ begin
   end;
   mem.Free;
   result := TJSONObject.Create;
-  result.AddPair('news', ar);
+  result.AddPair('mag', ar);
 end;
 
 procedure TDataModule1.postMessage(id: integer; Data: TJSONObject);
@@ -630,24 +634,26 @@ begin
   end;
 end;
 
-procedure TDataModule1.titleView(id: integer; out Data: TJSONObject);
+function TDataModule1.titleView(magid, writerId: integer;
+  out Data: TJSONObject): Boolean;
 var
-  d: TJSONObject;
   i: integer;
+  v: Variant;
 begin
-  Data := TJSONObject.Create;
-  d := Data;
-  FDQuery1.SQL.Clear;
-  FDQuery1.SQL.Add('select * from mag where magid = :id;');
-  FDQuery1.Params.ParamByName('id').AsInteger := id;
-  FDQuery1.Open;
-  with FDQuery1 do
-    while Eof = false do
-    begin
-      for i := 0 to Fields.Count - 1 do
-        d.AddPair(Fields[i].FieldName, Fields[i].AsString);
-      Next;
-    end;
+  result := false;
+  if writerId = 0 then
+    Exit;
+  v := writer.Lookup('writerId', writerId, 'writer');
+  if VarIsNull(v) = true then
+    v := 'no one';
+  if mag.Locate('magid', magid) = true then
+  begin
+    Data := TJSONObject.Create;
+    Data.AddPair('writer', v);
+    for i := 0 to mag.Fields.Count - 1 do
+      Data.AddPair(mag.Fields[i].FieldName, mag.Fields[i].AsString);
+    result := true;
+  end;
 end;
 
 function TDataModule1.updateReaderId(Data: TJSONObject): Boolean;

@@ -16,6 +16,11 @@ object DataModule1: TDataModule1
       ProviderFlags = [pfInUpdate, pfInWhere, pfInKey]
       Required = True
     end
+    object dbwriterId: TIntegerField
+      AutoGenerateValue = arDefault
+      FieldName = 'writerId'
+      Origin = 'writerId'
+    end
     object dbmagId: TIntegerField
       AutoGenerateValue = arDefault
       FieldName = 'magId'
@@ -25,11 +30,6 @@ object DataModule1: TDataModule1
       AutoGenerateValue = arDefault
       FieldName = 'readerId'
       Origin = 'readerId'
-    end
-    object dbwriterId: TIntegerField
-      AutoGenerateValue = arDefault
-      FieldName = 'writerId'
-      Origin = 'writerId'
     end
   end
   object reader: TFDTable
@@ -77,7 +77,7 @@ object DataModule1: TDataModule1
     Top = 80
   end
   object news: TFDTable
-    IndexFieldNames = 'newsId'
+    IndexFieldNames = 'magId;newsId'
     Connection = MagazineConnection
     UpdateOptions.UpdateTableName = 'news'
     TableName = 'news'
@@ -90,9 +90,10 @@ object DataModule1: TDataModule1
       Required = True
     end
     object newsnewsId: TIntegerField
-      FieldKind = fkCalculated
       FieldName = 'newsId'
-      Calculated = True
+      Origin = 'newsId'
+      ProviderFlags = [pfInUpdate, pfInWhere, pfInKey]
+      Required = True
     end
     object newsday: TDateField
       AutoGenerateValue = arDefault
