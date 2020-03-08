@@ -31,8 +31,6 @@ type
     FDTable1enable: TBooleanField;
     Button2: TButton;
     FDTable2: TFDTable;
-    FDTable2writerId: TIntegerField;
-    FDTable2magId: TIntegerField;
     Button3: TButton;
     FDTable3: TFDTable;
     FDTable3writerId: TIntegerField;
@@ -44,6 +42,10 @@ type
     BindingsList1: TBindingsList;
     LinkControlToField1: TLinkControlToField;
     Button4: TButton;
+    FDTable2serial: TIntegerField;
+    FDTable2magId: TIntegerField;
+    FDTable2readerId: TIntegerField;
+    FDTable2writerId: TIntegerField;
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
     procedure Button4Click(Sender: TObject);
@@ -69,7 +71,7 @@ begin
   for i := 1 to 100 do
   begin
     FDTable1.AppendRecord([j,'MG'+j.ToString,'jiro'+j.ToString,'this is comment',Date,Date,true]);
-    FDTable2.AppendRecord([1,FDTable1.FieldByName('magid').AsInteger]);
+    FDTable2.AppendRecord([i,FDTable1.FieldByName('magid').AsInteger,0,1]);
     inc(j);
   end;
   if (FDTable3.Bof = true)and(FDTable3.Eof = true) then

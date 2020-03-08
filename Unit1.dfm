@@ -3,12 +3,34 @@ object DataModule1: TDataModule1
   OnCreate = DataModuleCreate
   Height = 257
   Width = 299
-  object database: TFDTable
+  object db: TFDTable
+    IndexFieldNames = 'serial'
     Connection = MagazineConnection
-    UpdateOptions.UpdateTableName = 'database'
-    TableName = 'database'
+    UpdateOptions.UpdateTableName = 'newstable.db'
+    TableName = 'newstable.db'
     Left = 48
-    Top = 128
+    Top = 136
+    object dbserial: TIntegerField
+      FieldName = 'serial'
+      Origin = '`serial`'
+      ProviderFlags = [pfInUpdate, pfInWhere, pfInKey]
+      Required = True
+    end
+    object dbmagId: TIntegerField
+      AutoGenerateValue = arDefault
+      FieldName = 'magId'
+      Origin = 'magId'
+    end
+    object dbreaderId: TIntegerField
+      AutoGenerateValue = arDefault
+      FieldName = 'readerId'
+      Origin = 'readerId'
+    end
+    object dbwriterId: TIntegerField
+      AutoGenerateValue = arDefault
+      FieldName = 'writerId'
+      Origin = 'writerId'
+    end
   end
   object reader: TFDTable
     IndexFieldNames = 'readerId'

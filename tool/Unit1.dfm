@@ -145,21 +145,32 @@ object Form2: TForm2
   end
   object FDTable2: TFDTable
     Active = True
-    IndexFieldNames = 'writerId;magId'
+    IndexFieldNames = 'serial'
     Connection = NewstableConnection
-    UpdateOptions.UpdateTableName = 'newstable.maglist'
-    TableName = 'newstable.maglist'
+    UpdateOptions.UpdateTableName = 'newstable.db'
+    TableName = 'newstable.db'
     Left = 448
     Top = 96
-    object FDTable2writerId: TIntegerField
-      FieldName = 'writerId'
-      Origin = 'writerId'
+    object FDTable2serial: TIntegerField
+      FieldName = 'serial'
+      Origin = '`serial`'
+      ProviderFlags = [pfInUpdate, pfInWhere, pfInKey]
       Required = True
     end
     object FDTable2magId: TIntegerField
+      AutoGenerateValue = arDefault
       FieldName = 'magId'
       Origin = 'magId'
-      Required = True
+    end
+    object FDTable2readerId: TIntegerField
+      AutoGenerateValue = arDefault
+      FieldName = 'readerId'
+      Origin = 'readerId'
+    end
+    object FDTable2writerId: TIntegerField
+      AutoGenerateValue = arDefault
+      FieldName = 'writerId'
+      Origin = 'writerId'
     end
   end
   object FDTable3: TFDTable

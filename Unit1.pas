@@ -13,7 +13,7 @@ uses
 
 type
   TDataModule1 = class(TDataModule)
-    database: TFDTable;
+    DB: TFDTable;
     reader: TFDTable;
     MagazineConnection: TFDConnection;
     FDQuery1: TFDQuery;
@@ -46,6 +46,10 @@ type
     imagenumber: TIntegerField;
     imagename: TWideStringField;
     imagedata: TWideMemoField;
+    dbserial: TIntegerField;
+    dbmagId: TIntegerField;
+    dbreaderId: TIntegerField;
+    dbwriterId: TIntegerField;
     procedure DataModuleCreate(Sender: TObject);
   private
     { Private êÈåæ }
@@ -108,7 +112,7 @@ begin
   na := Data.Values['magName'].Value;
   com := Data.Values['comment'].Value;
   mag.AppendRecord([i, na, com, Date, Date, true]);
-  database.AppendRecord([id, i, 0]);
+  DB.AppendRecord([id, i, 0]);
 end;
 
 procedure TDataModule1.backNumber(id: integer; out Data: TJSONObject);
@@ -165,7 +169,7 @@ begin
   mag.FieldByName('comment').AsString := Data.Values['comment'].Value;
   mag.FieldByName('enable').AsString := Data.Values['enable'].Value;
   mag.Post;
-  database.AppendRecord([id, i, 0]);
+  DB.AppendRecord([id, i, 0]);
 end;
 
 function TDataModule1.createReaderId(Data: TJSONObject): integer;
@@ -192,7 +196,7 @@ const
   tmp = 'create table if not exists ';
 begin
   FDQuery1.ExecSQL
-    (tmp + 'database(serial int primary key, magId int, readerId int, writerId int);');
+    (tmp + 'db(serial int primary key, magId int, readerId int, writerId int);');
   FDQuery1.ExecSQL
     (tmp + 'mag(magId int primary key, magNum varchar(10), magName varchar(20), comment varchar(50), day date, lastDay date, enable bool);');
   FDQuery1.ExecSQL
@@ -203,7 +207,7 @@ begin
     (tmp + 'news(magId int, newsId int, day date, changed bool, enabled bool, primary key (magId,newsId));');
   FDQuery1.ExecSQL
     (tmp + 'image(writerId int, number int, name varchar(20), data text, primary key (writerId,number));');
-  database.Open;
+  DB.Open;
   mag.Open;
   writer.Open;
   reader.Open;
@@ -212,18 +216,11 @@ begin
 end;
 
 procedure TDataModule1.deleteMagazine(id: integer);
-  procedure main(Sender: TObject);
-  begin
-    with Sender as TFDTable do
-      while Locate('magid', id) = true do
-        Delete;
-  end;
-
 begin
   if mag.Locate('magId', id) = true then
     mag.Delete;
-  main(news);
-  main(database);
+  while news.Locate('magid', id) = true do
+    news.Delete;
 end;
 
 procedure TDataModule1.deleteNumber(id, num: integer);
@@ -244,18 +241,18 @@ begin
   if reader.Locate('readerid;reader;mail;password', VarArrayOf([id, na, ma, pa])
     ) = true then
     reader.Delete;
-  while database.Locate('readerid', id) = true do
-    database.Delete;
+  while DB.Locate('readerid', id) = true do
+    DB.Delete;
 end;
 
 procedure TDataModule1.deleteWriter(var id: integer);
 begin
   if writer.Locate('writerid', id) = true then
     writer.Delete;
-  while database.Locate('writerid', id) = true do
+  while DB.Locate('writerid', id) = true do
   begin
-    deleteMagazine(database.FieldByName('magid').AsInteger);
-    database.Delete;
+    deleteMagazine(DB.FieldByName('magid').AsInteger);
+    DB.Delete;
   end;
   id := 0;
 end;
@@ -450,15 +447,15 @@ end;
 
 procedure TDataModule1.magIdOff(id, magid: integer);
 begin
-  if database.Locate('readerId;magId', VarArrayOf([id, magid])) = true then
-    database.Delete;
+  if DB.Locate('readerId;magId', VarArrayOf([id, magid])) = true then
+    DB.Delete;
 end;
 
 procedure TDataModule1.magIdOn(id, magid: integer);
 begin
   if (reader.Locate('readerid', id) = true) and
     (mag.Locate('magid', magid) = true) then
-    database.AppendRecord([mag.FieldByName('writerid').AsInteger, magid, id]);
+    DB.AppendRecord([mag.FieldByName('writerid').AsInteger, magid, id]);
 end;
 
 procedure TDataModule1.magListAll(id: integer; out Data: TJSONObject);
@@ -486,14 +483,14 @@ begin
     js.AddPair('day', mag.FieldByName('day').AsString);
     js.AddPair('lastDay', mag.FieldByName('lastDay').AsString);
     js.AddPair('count', v);
-    v := database.Lookup('magId', i, 'writerId');
+    v := DB.Lookup('magId', i, 'writerId');
     v := writer.Lookup('writerId', v, 'writer');
     if VarIsNull(v) = true then
       js.AddPair('writer', TJSONFalse.Create)
     else
       js.AddPair('writer', v);
-    if (id = 0) or (database.Locate('readerId;magid', VarArrayOf([id, i]))
-      = false) then
+    if (id = 0) or (DB.Locate('readerId;magid', VarArrayOf([id, i])) = false)
+    then
       js.AddPair('fun', TJSONFalse.Create)
     else
       js.AddPair('fun', TJSONTrue.Create);
