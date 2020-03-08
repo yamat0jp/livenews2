@@ -50,6 +50,7 @@ type
     newsday: TDateField;
     newschanged: TBooleanField;
     newsenabled: TBooleanField;
+    newsfiles: TWideMemoField;
     procedure DataModuleCreate(Sender: TObject);
   private
     { Private êÈåæ }
@@ -57,7 +58,7 @@ type
   public
     { Public êÈåæ }
     procedure AddMagazine(id: integer; out Data: TJSONObject);
-    procedure backNumber(id: integer; out Data: TJSONObject);
+    procedure backNumber(num: string; out Data: TJSONObject);
     function existsMail(mail: string): Boolean;
     function checkUserPassword(id: integer; password: string): Boolean;
     function createReaderId(Data: TJSONObject): integer;
@@ -116,26 +117,32 @@ begin
   DB.AppendRecord([id, i, 0]);
 end;
 
-procedure TDataModule1.backNumber(id: integer; out Data: TJSONObject);
+procedure TDataModule1.backNumber(num: string; out Data: TJSONObject);
 const
   con = 'Ç±ÇÃãLéñÇÕåˆäJêßå¿Ç™Ç†ÇËÇ‹Ç∑.';
 var
   d: TJSONObject;
+  ar: TJSONArray;
   mem: TStringList;
   blob: TStream;
 begin
+  if mag.Locate('magNum',num) = false then
+    Exit;
   Data := TJSONObject.Create;
-  d := Data;
+  ar:=TJSONArray.Create;
+  data.AddPair('data',ar);
   mem := TStringList.Create;
   with FDQuery1 do
   begin
     SQL.Clear;
-    SQL.Add('select file,enabled from news where magId = :id order by lastDay;');
-    Params.ParamByName('id').AsInteger := id;
+    SQL.Add('select files,enabled from news where magId = :id order by day;');
+    Params.ParamByName('id').AsInteger := mag.FieldByName('magId').AsInteger;
     Open;
     while Eof = false do
     begin
-      blob := CreateBlobStream(FieldByName('text'), bmRead);
+      d:=TJSONObject.Create;
+      ar.Add(d);
+      blob := CreateBlobStream(FieldByName('files'), bmRead);
       mem.LoadFromStream(blob);
       if FieldByName('enabled').AsBoolean = true then
         d.AddPair('text', mem.Text)

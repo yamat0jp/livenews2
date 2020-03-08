@@ -12,10 +12,9 @@ type
     writerData: TPageProducer;
     backnumber: TPageProducer;
     mainView: TPageProducer;
-    writerLogin: TPageProducer;
+    writerpage: TPageProducer;
     procedure WebModule1DefaultHandlerAction(Sender: TObject;
       Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
-    procedure WebModuleCreate(Sender: TObject);
     procedure WebModule1writeMagAction(Sender: TObject; Request: TWebRequest;
       Response: TWebResponse; var Handled: Boolean);
     procedure WebModule1selectionAction(Sender: TObject; Request: TWebRequest;
@@ -39,6 +38,8 @@ type
     procedure WebModule1readerTopAction(Sender: TObject; Request: TWebRequest;
       Response: TWebResponse; var Handled: Boolean);
     procedure WebModule1login2Action(Sender: TObject; Request: TWebRequest;
+      Response: TWebResponse; var Handled: Boolean);
+    procedure WebModule1writerpageAction(Sender: TObject; Request: TWebRequest;
       Response: TWebResponse; var Handled: Boolean);
   private
     { private êÈåæ }
@@ -87,7 +88,7 @@ procedure TWebModule1.WebModule1detailAction(Sender: TObject;
 var
   data: TJSONObject;
 begin
-  DataModule1.backnumber(Request.QueryFields.Values['id'].ToInteger, data);
+  DataModule1.backnumber(Request.QueryFields.Values['id'], data);
   Response.ContentType := 'text/html;charset=utf-8';
   mustache := TSynMustache.Parse(backnumber.Content);
   Response.Content := mustache.RenderJSON(data.ToString);
@@ -117,16 +118,14 @@ end;
 
 procedure TWebModule1.WebModule1login2Action(Sender: TObject;
   Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
+var
+  data: TJSONObject;
 begin
-  case Request.MethodType of
-    mtGet:
-      begin
-        Response.ContentType := 'text/html;charset=utf-8';
-        Response.Content := writerLogin.Content;
-      end;
-    mtPost:
-      Response.SendRedirect('/writer/top');
-  end;
+  data:=TJSONObject.Create;
+  data.AddPair('mail',Request.ContentFields.Values['mail']);
+  data.AddPair('password',Request.ContentFields.Values['password']);
+  writerId:=DataModule1.loginWriter(data);
+  Response.SendRedirect('/writer/page');
 end;
 
 procedure TWebModule1.WebModule1loginAction(Sender: TObject;
@@ -306,6 +305,21 @@ begin
   data.Free;
 end;
 
+procedure TWebModule1.WebModule1writerpageAction(Sender: TObject;
+  Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
+var
+  data: TJSONObject;
+begin
+  Response.ContentType:='text/html;charset=utf-8';
+  data:=TJSONObject.Create;
+  if writerId = 0 then
+    data.AddPair('login',TJSONFalse.Create)
+  else
+    data.AddPair('login',TJSONTrue.Create);
+  mustache:=TSynMustAche.Parse(writerpage.Content);
+  Response.Content:=mustache.RenderJSON(data.ToJSON);
+end;
+
 procedure TWebModule1.WebModule1writerTopAction(Sender: TObject;
   Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
 var
@@ -317,11 +331,6 @@ begin
   mustache := TSynMustache.Parse(writerTop.Content);
   Response.Content := mustache.RenderJSON(data.ToJSON);
   data.Free;
-end;
-
-procedure TWebModule1.WebModuleCreate(Sender: TObject);
-begin
-  writerId := 1;
 end;
 
 end.

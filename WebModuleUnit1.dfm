@@ -1,6 +1,5 @@
 object WebModule1: TWebModule1
   OldCreateOrder = False
-  OnCreate = WebModuleCreate
   Actions = <
     item
       Default = True
@@ -50,6 +49,11 @@ object WebModule1: TWebModule1
       Name = 'writeMag'
       PathInfo = '/writer/regist'
       OnAction = WebModule1writeMagAction
+    end
+    item
+      Name = 'writerpage'
+      PathInfo = '/writer/page'
+      OnAction = WebModule1writerpageAction
     end
     item
       MethodType = mtPost
@@ -146,6 +150,9 @@ object WebModule1: TWebModule1
       '        <form method=post action=/logout>'
       '        <input type=submit>'
       '        </form>'
+      
+        '        <a href=/reader/top>'#12518#12540#12470#12540#12507#12540#12512'</a>'#12288#12289'<a href=/reader/data>'#12518#12540 +
+        #12470#12540#24773#22577'</a>'
       '    {{/id}}'
       '    {{^id}}'
       '        <p>'#12525#12464#12452#12531
@@ -159,7 +166,8 @@ object WebModule1: TWebModule1
       '    {{#items}}'
       '        {{#enable}}'
       '                <table border=1>'
-      '                <th>{{magName}} writed by {{writer}}'
+      '                <th><a href=/backnumber?id={{magNum}}>'
+      '                        {{magName}}</a> writed by {{writer}}'
       '                        {{^fun}}{{#id}}'
       
         '                        <form method=post action=/reader/select?' +
@@ -186,12 +194,7 @@ object WebModule1: TWebModule1
       '        <input type="password" name="password">'
       '        <input type="submit" name="regReader" value="send">'
       '    </form>'
-      '    <form method=post action=/writer/data>'
-      '        <input type=text name=writer>'
-      '        <input type=text name=mail>'
-      '        <input type=password name=password>'
-      '        <input type=submit name=regWriter value=send>'
-      '    </form>'
+      '    <p>'#35352#32773#30331#37682#12399'<a href=/writer/page>'#12371#12385#12425'</a>'
       '</body>'
       '</html>')
     Left = 112
@@ -276,10 +279,10 @@ object WebModule1: TWebModule1
       '<body>'
       '        <p>{{name}}'
       '        <p>{{comment}}'
-      '        {#data}'
+      '        {{#data}}'
       '                <hr>'
-      '                {{content}}'
-      '        {/data}'
+      '                {{text}}'
+      '        {{/data}}'
       '        <form method=post action=/reader/select>'
       '        <input type=submit value="'#30331#37682'">'
       '        </form>'
@@ -315,24 +318,41 @@ object WebModule1: TWebModule1
     Left = 240
     Top = 24
   end
-  object writerLogin: TPageProducer
+  object writerpage: TPageProducer
     HTMLDoc.Strings = (
       '<!DOCTYPE html>'
-      '<html lang="ja">'
+      '<html lang="en">'
       '<head>'
+      '    <title>Document'
+      '</title>'
       '    <meta charset="UTF-8">'
       
         '    <meta name="viewport" content="width=device-width, initial-s' +
         'cale=1.0">'
-      '    <title>Document</title>'
       '</head>'
       '<body>'
-      '        <p>'#35352#32773#29992#12525#12464#12452#12531
-      '        <form method=post action=/writer/login>'
+      '    {{^login}}'
+      '    <p>'#12525#12464#12452#12531
+      '    <form method=post action=/writer/login>'
+      '        <input type=text name=writer>'
       '        <input type=text name=mail>'
       '        <input type=password name=password>'
-      '        <input type=submit>'
+      '        <input type=submit value=login>'
+      '    </form>'
+      '    <p>'#26032#35215#35352#32773#30331#37682
+      '    <form method=post action=/writer/data>'
+      '        <input type=text name=writer>'
+      '        <input type=text name=mail>'
+      '        <input type=password name=password>'
+      '        <input type=submit name=regWriter value=send>'
+      '    </form>'
+      '    {{/login}}'
+      '    {{#login}}'
+      '        <form method=post action=/writer/logout>'
+      '        <input type=submit value=logout>'
       '        </form>'
+      '    <p><a href=/writer/top>'#12507#12540#12512'</a>'#12288#12289#12288'<a href=/writer/data>'#24773#22577'</a>'
+      '    {{/login}}'
       '</body>'
       '</html>')
     Left = 168

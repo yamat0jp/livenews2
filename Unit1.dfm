@@ -95,6 +95,12 @@ object DataModule1: TDataModule1
       ProviderFlags = [pfInUpdate, pfInWhere, pfInKey]
       Required = True
     end
+    object newsfiles: TWideMemoField
+      AutoGenerateValue = arDefault
+      FieldName = 'files'
+      Origin = 'files'
+      BlobType = ftWideMemo
+    end
     object newsday: TDateField
       AutoGenerateValue = arDefault
       FieldName = 'day'
