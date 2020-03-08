@@ -35,22 +35,13 @@ object Form2: TForm2
     Align = alRight
     Caption = 'Panel1'
     TabOrder = 1
-    object Button1: TButton
-      Left = 56
-      Top = 136
-      Width = 75
-      Height = 25
-      Caption = 'Button1'
-      TabOrder = 0
-      OnClick = Button1Click
-    end
     object Button2: TButton
       Left = 54
-      Top = 184
+      Top = 138
       Width = 75
       Height = 25
-      Caption = 'Button2'
-      TabOrder = 1
+      Caption = 'execute'
+      TabOrder = 0
       OnClick = Button2Click
     end
     object Button3: TButton
@@ -58,8 +49,8 @@ object Form2: TForm2
       Top = 32
       Width = 75
       Height = 25
-      Caption = 'Button3'
-      TabOrder = 2
+      Caption = 'clear'
+      TabOrder = 1
       OnClick = Button3Click
     end
     object Edit1: TEdit
@@ -67,7 +58,16 @@ object Form2: TForm2
       Top = 248
       Width = 121
       Height = 21
+      TabOrder = 2
+    end
+    object Button4: TButton
+      Left = 56
+      Top = 79
+      Width = 75
+      Height = 25
+      Caption = 'refresh'
       TabOrder = 3
+      OnClick = Button4Click
     end
   end
   object NewstableConnection: TFDConnection

@@ -65,7 +65,7 @@ type
     procedure custView(id: integer; out Data: TJSONObject);
     procedure deleteMagazine(id: integer);
     procedure deleteNumber(id, num: integer);
-    procedure deleteWriter(id: integer);
+    procedure deleteWriter(var id: integer);
     procedure getView(id, num: integer; out Data: TJSONObject); overload;
     procedure getView(id: integer; out Data: TJSONObject); overload;
     procedure viewList(id: integer; out Data: TJSONObject);
@@ -226,9 +226,10 @@ procedure TDataModule1.deleteMagazine(id: integer);
   end;
 
 begin
-  main(mag);
+  if mag.Locate('magId',id) = true then
+    mag.Delete;
   main(news);
-//    main('database');
+//  main(database);
   main(indexTable);
 end;
 
@@ -254,15 +255,16 @@ begin
     indexTable.Delete;
 end;
 
-procedure TDataModule1.deleteWriter(id: integer);
+procedure TDataModule1.deleteWriter(var id: integer);
 begin
   if writer.Locate('writerid',id) = true then
     writer.Delete;
-  while maglist.Locate('writerid',id) = true do
+  while magList.Locate('writerid',id) = true do
   begin
     deleteMagazine(magList.FieldByName('magid').AsInteger);
     magList.Delete;
   end;
+  id:=0;
 end;
 
 function TDataModule1.existsMail(mail: string): Boolean;
@@ -490,7 +492,10 @@ begin
     js.AddPair('count',v);
     v:=magList.Lookup('magId',i,'writerId');
     v:=writer.Lookup('writerId',v,'writer');
-    js.AddPair('writer',v);
+    if VarIsNull(v) = true then
+      js.AddPair('writer',TJSONFalse.Create)
+    else
+      js.AddPair('writer',v);
     if (id = 0)or(indexTable.Locate('readerId;magid',VarArrayOf([id,i])) = false) then
       js.AddPair('fun',TJSONFalse.Create)
     else

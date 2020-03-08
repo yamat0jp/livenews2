@@ -25,7 +25,6 @@ type
     FDTable1comment: TWideStringField;
     FDTable1day: TDateField;
     Panel1: TPanel;
-    Button1: TButton;
     FDQuery1: TFDQuery;
     FDGUIxWaitCursor1: TFDGUIxWaitCursor;
     FDTable1lastDay: TDateField;
@@ -44,9 +43,10 @@ type
     BindSourceDB1: TBindSourceDB;
     BindingsList1: TBindingsList;
     LinkControlToField1: TLinkControlToField;
-    procedure Button1Click(Sender: TObject);
+    Button4: TButton;
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
+    procedure Button4Click(Sender: TObject);
   private
     { Private êÈåæ }
   public
@@ -60,7 +60,7 @@ implementation
 
 {$R *.dfm}
 
-procedure TForm2.Button1Click(Sender: TObject);
+procedure TForm2.Button2Click(Sender: TObject);
 var
   i, j: Integer;
 begin
@@ -69,20 +69,11 @@ begin
   for i := 1 to 100 do
   begin
     FDTable1.AppendRecord([j,'MG'+j.ToString,'jiro'+j.ToString,'this is comment',Date,Date,true]);
+    FDTable2.AppendRecord([1,FDTable1.FieldByName('magid').AsInteger]);
     inc(j);
   end;
-end;
-
-procedure TForm2.Button2Click(Sender: TObject);
-begin
   if (FDTable3.Bof = true)and(FDTable3.Eof = true) then
     FDTable3.AppendRecord([1,'masasi','mail','pass']);
-  FDTable1.First;
-  while FDTable1.Eof = false do
-  begin
-    FDTable2.AppendRecord([1,FDTable1.FieldByName('magid').AsInteger]);
-    FDTable1.Next;
-  end;
 end;
 
 procedure TForm2.Button3Click(Sender: TObject);
@@ -91,6 +82,13 @@ begin
     FDTable1.Delete;
   while FDTable2.Eof = false do
     FDTable2.Delete;
+end;
+
+procedure TForm2.Button4Click(Sender: TObject);
+begin
+  FDTable1.Refresh;
+  FDTable2.Refresh;
+  FDTable3.Refresh;
 end;
 
 end.
