@@ -75,7 +75,6 @@ type
     function magid(name: string): integer;
     procedure magIdOff(id, magid: integer);
     procedure magIdOn(id, magid: integer);
-    function already(id: integer;const magnum: string): Boolean;
     procedure createMagId(id: integer; out Data: TJSONObject);
     procedure postMessage(id: integer; Data: TJSONObject);
     procedure createWriterId(Data: TJSONObject);
@@ -112,11 +111,6 @@ begin
   com := Data.Values['comment'].Value;
   mag.AppendRecord([i, na, com, Date, Date, true]);
   magList.AppendRecord([id, i]);
-end;
-
-function TDataModule1.already(id: integer; const magnum: string): Boolean;
-begin
-  result:=indexTable.Locate('readerId,magNum',VarArrayOf([id,magnum]));
 end;
 
 procedure TDataModule1.backNumber(id: integer; out Data: TJSONObject);
@@ -165,7 +159,8 @@ begin
   FDQuery1.Open;
   i := FDQuery1.FieldByName('count').AsInteger + 1;
   mag.Append;
-  mag.FieldByName('magId').AsInteger := i;
+  mag.FieldByName('magId').AsInteger := id;
+  mag.FieldByName('magNum').AsString := 'MAG'+i.ToString;
   mag.FieldByName('day').AsDateTime := Date;
   mag.FieldByName('lastDay').AsDateTime := Date;
   mag.FieldByName('magName').AsString := Data.Values['magName'].Value;
@@ -446,8 +441,14 @@ begin
 end;
 
 function TDataModule1.magid(name: string): integer;
+var
+  v: Variant;
 begin
-  result := mag.Lookup('magname', name, 'magid');
+  v:=mag.Lookup('magNum', name, 'magid');
+  if VarIsNull(v) = true then
+    result:=0
+  else
+    result :=v;
 end;
 
 procedure TDataModule1.magIdOff(id, magid: integer);
@@ -458,7 +459,7 @@ end;
 
 procedure TDataModule1.magIdOn(id, magid: integer);
 begin
-  if (writer.Locate('readerid', id) = true) and
+  if (reader.Locate('readerid', id) = true) and
     (mag.Locate('magid', magid) = true) then
     indexTable.AppendRecord([id, magid]);
 end;
@@ -487,7 +488,10 @@ begin
     js.AddPair('day', mag.FieldByName('day').AsString);
     js.AddPair('lastDay', mag.FieldByName('lastDay').AsString);
     js.AddPair('count',v);
-    if (id = 0)or(indexTable.Locate('magid',id) = false) then
+    v:=magList.Lookup('magId',i,'writerId');
+    v:=writer.Lookup('writerId',v,'writer');
+    js.AddPair('writer',v);
+    if (id = 0)or(indexTable.Locate('readerId;magid',VarArrayOf([id,i])) = false) then
       js.AddPair('fun',TJSONFalse.Create)
     else
       js.AddPair('fun',TJSONTrue.Create);

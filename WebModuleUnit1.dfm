@@ -58,6 +58,11 @@ object WebModule1: TWebModule1
       OnAction = WebModule1loginAction
     end
     item
+      Name = 'login2'
+      PathInfo = '/writer/login'
+      OnAction = WebModule1login2Action
+    end
+    item
       MethodType = mtPost
       Name = 'logout'
       PathInfo = '/logout'
@@ -96,7 +101,7 @@ object WebModule1: TWebModule1
       '        <p>'#12354#12394#12383#12398#26412#26842#12391#12377
       '    {{#mag}}'
       '        <table border=1>'
-      '        <th>{{name}}<ht>'
+      '        <th>{{name}} writed by {{writer}}<ht>'
       '        <tr><td>{{day}}</td></tr>'
       '        <tr><td>{{lastDay}}</td></tr>'
       '        {{^enable}}<tr><td>'#20241#21002#20013'</td></tr>{{/enable}}'
@@ -152,7 +157,7 @@ object WebModule1: TWebModule1
       '    {{#items}}'
       '        {{#enable}}'
       '                <table border=1>'
-      '                <th>{{magName}}'
+      '                <th>{{magName}} writed by {{writer}}'
       '                        {{^fun}}{{#id}}'
       
         '                        <form method=post action=/reader/select?' +
@@ -306,5 +311,28 @@ object WebModule1: TWebModule1
       '</html>')
     Left = 240
     Top = 24
+  end
+  object writerLogin: TPageProducer
+    HTMLDoc.Strings = (
+      '<!DOCTYPE html>'
+      '<html lang="ja">'
+      '<head>'
+      '    <meta charset="UTF-8">'
+      
+        '    <meta name="viewport" content="width=device-width, initial-s' +
+        'cale=1.0">'
+      '    <title>Document</title>'
+      '</head>'
+      '<body>'
+      '        <p>'#35352#32773#29992#12525#12464#12452#12531
+      '        <form method=post action=/writer/login>'
+      '        <input type=text name=mail>'
+      '        <input type=password name=password>'
+      '        <input type=submit>'
+      '        </form>'
+      '</body>'
+      '</html>')
+    Left = 168
+    Top = 136
   end
 end

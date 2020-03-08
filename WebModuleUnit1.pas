@@ -12,6 +12,7 @@ type
     writerData: TPageProducer;
     backnumber: TPageProducer;
     mainView: TPageProducer;
+    writerLogin: TPageProducer;
     procedure WebModule1DefaultHandlerAction(Sender: TObject;
       Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
     procedure WebModuleCreate(Sender: TObject);
@@ -36,6 +37,8 @@ type
     procedure WebModule1imageAction(Sender: TObject; Request: TWebRequest;
       Response: TWebResponse; var Handled: Boolean);
     procedure WebModule1readerTopAction(Sender: TObject; Request: TWebRequest;
+      Response: TWebResponse; var Handled: Boolean);
+    procedure WebModule1login2Action(Sender: TObject; Request: TWebRequest;
       Response: TWebResponse; var Handled: Boolean);
   private
     { private êÈåæ }
@@ -64,7 +67,7 @@ procedure TWebModule1.WebModule1DefaultHandlerAction(Sender: TObject;
 var
   data: TJSONObject;
 begin
-  DataModule1.magListAll(readerId,data);
+  DataModule1.magListAll(readerId, data);
   if readerId = 0 then
     data.AddPair('id', TJSONFalse.Create)
   else
@@ -110,6 +113,20 @@ begin
   Finalize(raw);
   Response.ContentType := 'jpeg/image';
   Response.ContentStream := mem;
+end;
+
+procedure TWebModule1.WebModule1login2Action(Sender: TObject;
+  Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
+begin
+  case Request.MethodType of
+    mtGet:
+      begin
+        Response.ContentType := 'text/html;charset=utf-8';
+        Response.Content := writerLogin.Content;
+      end;
+    mtPost:
+      Response.SendRedirect('/writer/top');
+  end;
 end;
 
 procedure TWebModule1.WebModule1loginAction(Sender: TObject;
@@ -226,7 +243,7 @@ begin
     mtDelete:
       DataModule1.magIdOff(readerId, id);
   end;
-  Handled:=false;
+  Handled := false;
 end;
 
 procedure TWebModule1.WebModule1writeMagAction(Sender: TObject;
