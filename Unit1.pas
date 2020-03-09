@@ -126,11 +126,11 @@ var
   mem: TStringList;
   blob: TStream;
 begin
-  if mag.Locate('magNum',num) = false then
+  if mag.Locate('magNum', num) = false then
     Exit;
   Data := TJSONObject.Create;
-  ar:=TJSONArray.Create;
-  data.AddPair('data',ar);
+  ar := TJSONArray.Create;
+  Data.AddPair('data', ar);
   mem := TStringList.Create;
   with FDQuery1 do
   begin
@@ -140,7 +140,7 @@ begin
     Open;
     while Eof = false do
     begin
-      d:=TJSONObject.Create;
+      d := TJSONObject.Create;
       ar.Add(d);
       blob := CreateBlobStream(FieldByName('files'), bmRead);
       mem.LoadFromStream(blob);
@@ -434,8 +434,7 @@ begin
     Data.AddPair('day', FDQuery1.FieldByName('day').AsString);
     Data.AddPair('last', FDQuery1.FieldByName('lastDay').AsString);
     FDQuery1.SQL.Clear;
-    FDQuery1.SQL.Add
-      ('select COUNT(*) as count from indextable where magid = :id;');
+    FDQuery1.SQL.Add('select COUNT(*) as count from db where magid = :id and readerid <> 0;');
     FDQuery1.ParamByName('id').AsInteger := id;
     FDQuery1.Open;
     Data.AddPair('count', FDQuery1.FieldByName('count').AsString);
@@ -542,27 +541,22 @@ var
   d: TJSONObject;
   val: TJSONValue;
   ar: TJSONArray;
-  list: TList<integer>;
-  i: integer;
 begin
-  d := Data;
-  FDQuery1.SQL.Clear;
-  FDQuery1.SQL.Add('select * from maglist where writerid = :id;');
-  FDQuery1.Params.ParamByName('id').AsInteger := id;
-  FDQuery1.Open;
-  ar := TJSONArray.Create;
-  list := TList<integer>.Create;
-  while FDQuery1.Eof = false do
-  begin
-    list.Add(FDQuery1.FieldByName('magId').AsInteger);
-    FDQuery1.Next;
+  ar:=TJSONArray.Create;
+  DB.Filter := 'writerid = '+id.ToString+' and readerid = 0';
+  DB.Filtered := true;
+  try
+    DB.First;
+    while DB.Eof = false do
+    begin
+      d := TJSONObject.Create;
+      magData(DB.FieldByName('magid').AsInteger, d);
+      ar.Add(d);
+      DB.Next;
+    end;
+  finally
+    DB.Filtered := false;
   end;
-  for i in list do
-  begin
-    magData(i, d);
-    ar.Add(d);
-  end;
-  list.Free;
   if ar.Count = 0 then
   begin
     ar.Free;

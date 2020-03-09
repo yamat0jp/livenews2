@@ -194,7 +194,7 @@ object WebModule1: TWebModule1
       '        <input type="password" name="password">'
       '        <input type="submit" name="regReader" value="send">'
       '    </form>'
-      '    <p>'#35352#32773#30331#37682#12399'<a href=/writer/page>'#12371#12385#12425'</a>'
+      '    <p>'#35352#32773#12398#26041#12399'<a href=/writer/page>'#12371#12385#12425'</a>'#12363#12425#12525#12464#12452#12531
       '</body>'
       '</html>')
     Left = 112
@@ -334,7 +334,6 @@ object WebModule1: TWebModule1
       '    {{^login}}'
       '    <p>'#12525#12464#12452#12531
       '    <form method=post action=/writer/login>'
-      '        <input type=text name=writer>'
       '        <input type=text name=mail>'
       '        <input type=password name=password>'
       '        <input type=submit value=login>'
@@ -353,6 +352,7 @@ object WebModule1: TWebModule1
       '        </form>'
       '    <p><a href=/writer/top>'#12507#12540#12512'</a>'#12288#12289#12288'<a href=/writer/data>'#24773#22577'</a>'
       '    {{/login}}'
+      '    <p>'#39015#23458#12391#12354#12427#12521#12452#12479#12540#12408#12398#35500#26126#12394#12393#26360#12365#12383#12356
       '</body>'
       '</html>')
     Left = 168
