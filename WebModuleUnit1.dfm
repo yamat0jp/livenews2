@@ -20,6 +20,11 @@ object WebModule1: TWebModule1
       OnAction = WebModule1detailAction
     end
     item
+      Name = 'upload'
+      PathInfo = '/upload'
+      OnAction = WebModule1uploadAction
+    end
+    item
       Name = 'selection'
       PathInfo = '/reader/select'
       OnAction = WebModule1selectionAction
@@ -212,7 +217,7 @@ object WebModule1: TWebModule1
       '    <title>Document</title>'
       '</head>'
       '<body>'
-      '        <p>'#26032#35215#30331#37682
+      '        <p>'#26032#21002#30331#37682
       '        <form method=post action=/writer/regist>'
       '                <input type=text name=name>'
       '                <input type=text name=comment>'
@@ -222,7 +227,7 @@ object WebModule1: TWebModule1
       '        <p>'#30331#37682#20013#12398#12510#12460#12472#12531#12391#12377
       '        {{#mag}}'
       '                <hr>'
-      '                <p>'#12479#12452#12488#12523'{{name}}'
+      '                <p><a href=/upload>'#12479#12452#12488#12523'{{name}}</a>'
       '                <p>{{comment}}'
       '                <p>'#30331#37682#26085'{{day}}'
       '                <p>'#26368#32066#26356#26032#26085'{{last}}'
@@ -267,28 +272,13 @@ object WebModule1: TWebModule1
   end
   object backnumber: TPageProducer
     HTMLDoc.Strings = (
-      '<!DOCTYPE html>'
-      '<html lang="en">'
-      '<head>'
-      '    <meta charset="UTF-8">'
-      
-        '    <meta name="viewport" content="width=device-width, initial-s' +
-        'cale=1.0">'
-      '    <title>Document</title>'
-      '</head>'
-      '<body>'
       '        <p>{{name}}'
       '        <p>{{comment}}'
       '        {{#data}}'
       '                <hr>'
       '                {{text}}'
-      '        {{/data}}'
-      '        <form method=post action=/reader/select>'
-      '        <input type=submit value="'#30331#37682'">'
-      '        </form>'
-      '</body>'
-      '</html>')
-    Left = 112
+      '        {{/data}}')
+    Left = 304
     Top = 80
   end
   object mainView: TPageProducer
@@ -357,5 +347,46 @@ object WebModule1: TWebModule1
       '</html>')
     Left = 168
     Top = 136
+  end
+  object upload: TPageProducer
+    HTMLDoc.Strings = (
+      '<!DOCTYPE html>'
+      '<html lang="en">'
+      '<head>'
+      '    <meta charset="UTF-8">'
+      
+        '    <meta name="viewport" content="width=device-width, initial-s' +
+        'cale=1.0">'
+      '    <title>Document</title>'
+      '</head>'
+      '<body>'
+      '        <#main>'
+      '</body>'
+      '</html>')
+    OnHTMLTag = uploadHTMLTag
+    Left = 304
+    Top = 24
+  end
+  object mags: TPageProducer
+    HTMLDoc.Strings = (
+      '<!DOCTYPE html>'
+      '<html lang="en">'
+      '<head>'
+      '    <meta charset="UTF-8">'
+      
+        '    <meta name="viewport" content="width=device-width, initial-s' +
+        'cale=1.0">'
+      '    <title>Document</title>'
+      '</head>'
+      '<body>'
+      '        <#main>'
+      '        <form method=post action=/reader/select>'
+      '        <input type=submit value="'#30331#37682'">'
+      '        </form>'
+      '</body>'
+      '</html>')
+    OnHTMLTag = magsHTMLTag
+    Left = 112
+    Top = 80
   end
 end

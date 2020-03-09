@@ -13,6 +13,8 @@ type
     backnumber: TPageProducer;
     mainView: TPageProducer;
     writerpage: TPageProducer;
+    upload: TPageProducer;
+    mags: TPageProducer;
     procedure WebModule1DefaultHandlerAction(Sender: TObject;
       Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
     procedure WebModule1writeMagAction(Sender: TObject; Request: TWebRequest;
@@ -41,6 +43,12 @@ type
       Response: TWebResponse; var Handled: Boolean);
     procedure WebModule1writerpageAction(Sender: TObject; Request: TWebRequest;
       Response: TWebResponse; var Handled: Boolean);
+    procedure WebModule1uploadAction(Sender: TObject; Request: TWebRequest;
+      Response: TWebResponse; var Handled: Boolean);
+    procedure uploadHTMLTag(Sender: TObject; Tag: TTag; const TagString: string;
+      TagParams: TStrings; var ReplaceText: string);
+    procedure magsHTMLTag(Sender: TObject; Tag: TTag; const TagString: string;
+      TagParams: TStrings; var ReplaceText: string);
   private
     { private êÈåæ }
     writerId: integer;
@@ -62,6 +70,20 @@ uses SynMustache, SynCommons, System.JSON, Unit1, System.NetEncoding;
 
 var
   mustache: TSynMustache;
+
+procedure TWebModule1.magsHTMLTag(Sender: TObject; Tag: TTag;
+  const TagString: string; TagParams: TStrings; var ReplaceText: string);
+begin
+  if TagString = 'main' then
+    ReplaceText:=backnumber.Content;
+end;
+
+procedure TWebModule1.uploadHTMLTag(Sender: TObject; Tag: TTag;
+  const TagString: string; TagParams: TStrings; var ReplaceText: string);
+begin
+  if TagString = 'main' then
+    ReplaceText:=backnumber.Content;
+end;
 
 procedure TWebModule1.WebModule1DefaultHandlerAction(Sender: TObject;
   Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
@@ -90,7 +112,7 @@ var
 begin
   DataModule1.backnumber(Request.QueryFields.Values['id'], data);
   Response.ContentType := 'text/html;charset=utf-8';
-  mustache := TSynMustache.Parse(backnumber.Content);
+  mustache := TSynMustache.Parse(mags.Content);
   Response.Content := mustache.RenderJSON(data.ToString);
 end;
 
@@ -245,6 +267,23 @@ begin
   Handled := false;
 end;
 
+procedure TWebModule1.WebModule1uploadAction(Sender: TObject;
+  Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
+var
+  num: string;
+  data: TJSONObject;
+begin
+  if Request.MethodType = mtPost then
+  begin
+    num:=Request.ContentFields.Values['magNum'];
+  end;
+  Response.ContentType:='text/html;charset=utf-8';
+  data:=TJSONObject.Create;
+  DataModule1.backNumber(num,data);
+  mustache:=TSynMustAche.Parse(upload.Content);
+  Response.Content:=mustache.RenderJSON(data.ToJSON);
+end;
+
 procedure TWebModule1.WebModule1writeMagAction(Sender: TObject;
   Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
 var
@@ -325,6 +364,11 @@ procedure TWebModule1.WebModule1writerTopAction(Sender: TObject;
 var
   data: TJSONObject;
 begin
+  if writerId = 0 then
+  begin
+    Handled:=false;
+    Exit;
+  end;
   data := TJSONObject.Create;
   DataModule1.magazines(writerId, data);
   Response.ContentType := 'text/html;charset=utf-8';
