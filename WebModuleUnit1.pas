@@ -62,7 +62,7 @@ var
 
 implementation
 
-uses SynMustache, SynCommons, System.JSON, Unit1, System.NetEncoding;
+uses SynMustache, SynCommons, System.JSON, Unit1, System.NetEncoding, System.Zip;
 
 { %CLASSGROUP 'Vcl.Controls.TControl' }
 
@@ -271,11 +271,15 @@ procedure TWebModule1.WebModule1uploadAction(Sender: TObject;
   Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
 var
   num: string;
+  mem: TMemoryStream;
   data: TJSONObject;
 begin
   if Request.MethodType = mtPost then
   begin
+    mem:=TMemoryStream.Create;
     num:=Request.ContentFields.Values['magNum'];
+    DataModule1.zipFile(num,mem);
+    mem.Free;
   end;
   Response.ContentType:='text/html;charset=utf-8';
   data:=TJSONObject.Create;

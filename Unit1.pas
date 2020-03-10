@@ -37,10 +37,6 @@ type
     magenable: TBooleanField;
     image: TFDTable;
     magmagNum: TWideStringField;
-    imagewriterId: TIntegerField;
-    imagenumber: TIntegerField;
-    imagename: TWideStringField;
-    imagedata: TWideMemoField;
     dbserial: TIntegerField;
     dbmagId: TIntegerField;
     dbreaderId: TIntegerField;
@@ -91,6 +87,7 @@ type
     procedure mainView(id: integer; out Data: TJSONObject);
     procedure imageView(id: integer; out Data: TJSONObject);
     function imageId(Data: TJSONObject): integer;
+    procedure zipFile(magNum: string; stream: TStream);
   end;
 
 var
@@ -98,7 +95,8 @@ var
 
 implementation
 
-uses System.Variants, System.Generics.Collections;
+uses System.Variants, System.Generics.Collections, System.Zip,
+  System.NetEncoding, System.AnsiStrings;
 
 { %CLASSGROUP 'Vcl.Controls.TControl' }
 
@@ -136,7 +134,7 @@ begin
   begin
     SQL.Clear;
     SQL.Add('select files,enabled from news where magId = :id order by day;');
-    Params.ParamByName('id').AsInteger := mag.FieldByName('magId').AsInteger;
+    ParamByName('id').AsInteger := mag.FieldByName('magId').AsInteger;
     Open;
     while Eof = false do
     begin
@@ -214,7 +212,7 @@ begin
   FDQuery1.ExecSQL
     (tmp + 'news(magId int, newsId int, files text, day date, changed bool, enabled bool, primary key (magId,newsId));');
   FDQuery1.ExecSQL
-    (tmp + 'image(writerId int, number int, name varchar(20), data text, primary key (writerId,number));');
+    (tmp + 'image(magId int, newsId int, writerId int, name varchar(20), data text, primary key (magId,newsId));');
   DB.Open;
   mag.Open;
   writer.Open;
@@ -289,7 +287,7 @@ begin
   ar := TJSONArray.Create;
   FDQuery1.SQL.Clear;
   FDQuery1.SQL.Add('select * from db where readerid = :id;');
-  FDQuery1.Params.ParamByName('id').AsInteger := id;
+  FDQuery1.ParamByName('id').AsInteger := id;
   FDQuery1.Open;
   with FDQuery1 do
     while Eof = false do
@@ -306,6 +304,69 @@ end;
 procedure TDataModule1.viewList(id: integer; out Data: TJSONObject);
 begin
 
+end;
+
+procedure TDataModule1.zipFile(magNum: string; stream: TStream);
+var
+  Zip: TZipFIle;
+  ziph: TZipHeader;
+  list: TStringList;
+  name, str, str2, s, s2: string;
+  id, i, j: integer;
+  v: Variant;
+  bytes: TBytes;
+begin
+  v := mag.Lookup('magNum', magNum, 'magId');
+  if VarIsNull(v) = true then
+    Exit;
+  with FDQuery1 do
+  begin
+    SQL.Clear;
+    SQL.Add('select MAX(newsId) as id from news where magId = :id;');
+    ParamByName('id').AsInteger := v;
+    Open;
+    id := FieldByName('id').AsInteger;
+  end;
+  Zip := TZipFIle.Create;
+  list := TStringList.Create;
+  Zip.Open(stream, zmRead);
+  for name in Zip.FileNames do
+  begin
+    s := name;
+    i := Length(s);
+    j := LastDelimiter('/', s);
+    str := Copy(s, j + 1, i);
+    Delete(s, j, i);
+    str2 := Copy(s, LastDelimiter('/', s), i);
+    if (str = '/images') and (str2 <> '') then
+    begin
+      Zip.Read(name, bytes);
+      image.AppendRecord([id, id, str2,
+        TNetEncoding.Base64.EncodeBytesToString(bytes)]);
+    end
+    else if ((str = 'style') or (str = 'text')) and (str2 <> '') then
+    begin
+      Zip.Read(name, stream, ziph);
+      list.LoadFromStream(stream);
+      stream.Free;
+      if str = 'text' then
+        for i := 0 to list.Count - 1 do
+          if Pos('../images/', list[i]) > 0 then
+          begin
+            s2 := Format('/images?id=%d&name=', [id]);
+            list[i] := ReplaceText(list[i], '../images/', s2);
+          end
+          else if Pos('../style/', list[i]) > 0 then
+          begin
+            s2 := Format('/style?id=%d&name=', [id]);
+            list[i] := ReplaceText(list[i], '../style/', s2);
+          end;
+      image.AppendRecord([id, id, str2, list.Text]);
+    end;
+    list.LoadFromStream(stream);
+  end;
+  list.Free;
+  Zip.Free;
 end;
 
 procedure TDataModule1.custData(id: integer; Data: TJSONObject);
@@ -328,7 +389,7 @@ begin
   begin
     SQL.Clear;
     SQL.Add('select * from db where readerid = :id;');
-    Params.ParamByName('id').AsInteger := id;
+    ParamByName('id').AsInteger := id;
     Open;
     while Eof = false do
     begin
@@ -371,7 +432,7 @@ begin
     Add(' where db.readerId = :id and db.magId = mag.magId and db.magId = news.magId');
     Add(' and db.writerId = writer.writerId and enabled = true order by news.day;');
   end;
-  FDQuery1.Params.ParamByName('id').AsInteger := id;
+  FDQuery1.ParamByName('id').AsInteger := id;
   FDQuery1.Open;
   Data := makeTable(FDQuery1);
 end;
@@ -434,7 +495,8 @@ begin
     Data.AddPair('day', FDQuery1.FieldByName('day').AsString);
     Data.AddPair('last', FDQuery1.FieldByName('lastDay').AsString);
     FDQuery1.SQL.Clear;
-    FDQuery1.SQL.Add('select COUNT(*) as count from db where magid = :id and readerid <> 0;');
+    FDQuery1.SQL.Add
+      ('select COUNT(*) as count from db where magid = :id and readerid <> 0;');
     FDQuery1.ParamByName('id').AsInteger := id;
     FDQuery1.Open;
     Data.AddPair('count', FDQuery1.FieldByName('count').AsString);
@@ -532,7 +594,7 @@ begin
     Add(' where db.newsId = news.newsId and db.magId = mag.magId and');
     Add(' db.writerId = writer.writerId and db.reader.id = :id order by day;');
   end;
-  FDQuery1.Params.ParamByName('id').AsInteger := id;
+  FDQuery1.ParamByName('id').AsInteger := id;
   Data := makeTable(FDQuery1);
 end;
 
@@ -542,8 +604,8 @@ var
   val: TJSONValue;
   ar: TJSONArray;
 begin
-  ar:=TJSONArray.Create;
-  DB.Filter := 'writerid = '+id.ToString+' and readerid = 0';
+  ar := TJSONArray.Create;
+  DB.Filter := 'writerid = ' + id.ToString + ' and readerid = 0';
   DB.Filtered := true;
   try
     DB.First;
@@ -609,7 +671,7 @@ var
 begin
   FDQuery1.SQL.Clear;
   FDQuery1.SQL.Add('select MAX(newsId) as id from news where magId = :id;');
-  FDQuery1.Params.ParamByName('id').AsInteger := id;
+  FDQuery1.ParamByName('id').AsInteger := id;
   FDQuery1.Open;
   if FDQuery1.RecordCount > 0 then
   begin

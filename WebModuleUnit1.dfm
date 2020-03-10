@@ -86,7 +86,7 @@ object WebModule1: TWebModule1
     item
       MethodType = mtGet
       Name = 'image'
-      PathInfo = '/img'
+      PathInfo = '/image'
       OnAction = WebModule1imageAction
     end
     item
@@ -192,13 +192,6 @@ object WebModule1: TWebModule1
       '        <p>'#12513#12483#12475#12540#12472
       '        {{.}}'
       '    {{/comment}}'
-      '    <p>'#26032#35215#30331#37682
-      '    <form method="post" action="/reader/data">'
-      '        <input type="text" name="reader">'
-      '        <input type="text" name="mail">'
-      '        <input type="password" name="password">'
-      '        <input type="submit" name="regReader" value="send">'
-      '    </form>'
       '    <p>'#35352#32773#12398#26041#12399'<a href=/writer/page>'#12371#12385#12425'</a>'#12363#12425#12525#12464#12452#12531
       '</body>'
       '</html>')
@@ -360,6 +353,13 @@ object WebModule1: TWebModule1
       '    <title>Document</title>'
       '</head>'
       '<body>'
+      '        <h1>UPLOAD PAGE</h1>'
+      
+        '        <form method=post action=/upload enctype="multipart/form' +
+        '-data">'
+      '        <input type=file name=epub>'
+      '        <input type=submit value="'#36865#20449'">'
+      '        </form>'
       '        <#main>'
       '</body>'
       '</html>')
@@ -380,9 +380,11 @@ object WebModule1: TWebModule1
       '</head>'
       '<body>'
       '        <#main>'
+      '        {{#id}}'
       '        <form method=post action=/reader/select>'
       '        <input type=submit value="'#30331#37682'">'
       '        </form>'
+      '        {{/id}}'
       '</body>'
       '</html>')
     OnHTMLTag = magsHTMLTag

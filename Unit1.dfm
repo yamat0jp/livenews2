@@ -198,32 +198,10 @@ object DataModule1: TDataModule1
     end
   end
   object image: TFDTable
-    IndexFieldNames = 'writerId;number'
     Connection = MagazineConnection
     UpdateOptions.UpdateTableName = 'image'
     TableName = 'image'
     Left = 48
     Top = 184
-    object imagewriterId: TIntegerField
-      AutoGenerateValue = arDefault
-      FieldName = 'writerId'
-      Origin = 'writerId'
-    end
-    object imagenumber: TIntegerField
-      AutoGenerateValue = arDefault
-      FieldName = 'number'
-      Origin = '`number`'
-    end
-    object imagename: TWideStringField
-      AutoGenerateValue = arDefault
-      FieldName = 'name'
-      Origin = '`name`'
-    end
-    object imagedata: TWideMemoField
-      AutoGenerateValue = arDefault
-      FieldName = 'data'
-      Origin = '`data`'
-      BlobType = ftWideMemo
-    end
   end
 end
