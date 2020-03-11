@@ -219,7 +219,7 @@ begin
   FDQuery1.ExecSQL
     (tmp + 'reader(readerId int primary key, reader varchar(20), mail varchar(20), password varchar(20));');
   FDQuery1.ExecSQL
-    (tmp + 'news(magId int, newsId int, files text, day date, changed bool, enabled bool, primary key (magId,newsId));');
+    (tmp + 'news(number int, magId int, newsId int, files text, day date, changed bool, enabled bool);');
   FDQuery1.ExecSQL
     (tmp + 'image(imgId int primary key, magId int, newsId int, writerId int, name varchar(20), copyright varchar(20), data longblob, encode bool);');
   DB.Open;
@@ -394,7 +394,7 @@ begin
         inc(imgId);
       end;
     end
-    else if (str2 = 'text') and (str <> '') then
+    else if (str2 = '/text') and (str <> '') then
     begin
       Zip.Read(name, stream, ziph);
       list.LoadFromStream(stream);
@@ -413,7 +413,7 @@ begin
         end;
       news.AppendRecord([v, id, list.Text, Date, false, true]);
     end
-    else if (str2 = 'style') and (str <> '') then
+    else if (str2 = '/style') and (str <> '') then
     begin
       Zip.Read(name, stream, ziph);
       list.LoadFromStream(stream);
@@ -748,7 +748,10 @@ begin
     ma := Data.Values['mail'].Value;
     pa := Data.Values['password'].Value;
     writer.AppendRecord([i, na, ma, pa]);
-  end;
+    result:=i;
+  end
+  else
+    result:=writer.FieldByName('writerid').AsInteger;
 end;
 
 function TDataModule1.titleView(magid, writerId: integer;

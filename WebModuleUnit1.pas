@@ -153,7 +153,7 @@ begin
   data.AddPair('mail',Request.ContentFields.Values['mail']);
   data.AddPair('password',Request.ContentFields.Values['password']);
   writerId:=DataModule1.loginWriter(data);
-  Response.SendRedirect('/writer/top');
+  Response.SendRedirect('/writer/data');
 end;
 
 procedure TWebModule1.WebModule1loginAction(Sender: TObject;
@@ -317,6 +317,7 @@ procedure TWebModule1.WebModule1writerDataAction(Sender: TObject;
   Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
 var
   data: TJSONObject;
+  top: Boolean;
 begin
   with Request.ContentFields do
   begin
@@ -330,7 +331,9 @@ begin
       begin
         Handled := false;
         Exit;
-      end;
+      end
+      else
+        top:=true;
     mtPost:
       if Request.ContentFields.Values['_method'] = 'delete' then
         DataModule1.deleteWriter(writerId)
@@ -353,7 +356,10 @@ begin
   data := TJSONObject.Create;
   DataModule1.custData(writerId, data);
   Response.ContentType := 'text/html;charset=utf-8';
-  mustache := TSynMustache.Parse(writerData.Content);
+  if top = true then
+    mustache := TSynMustache.Parse(writerTop.Content)
+  else
+    mustache := TSynMustache.Parse(writerData.Content);
   Response.Content := mustache.RenderJSON(data.ToJSON);
   data.Free;
 end;
