@@ -62,7 +62,8 @@ var
 
 implementation
 
-uses SynMustache, SynCommons, System.JSON, Unit1, System.NetEncoding, System.Zip, ReqMulti;
+uses SynMustache, SynCommons, System.JSON, Unit1, System.NetEncoding,
+  System.Zip, ReqMulti;
 
 { %CLASSGROUP 'Vcl.Controls.TControl' }
 
@@ -75,14 +76,14 @@ procedure TWebModule1.magsHTMLTag(Sender: TObject; Tag: TTag;
   const TagString: string; TagParams: TStrings; var ReplaceText: string);
 begin
   if TagString = 'main' then
-    ReplaceText:=backnumber.Content;
+    ReplaceText := backnumber.Content;
 end;
 
 procedure TWebModule1.uploadHTMLTag(Sender: TObject; Tag: TTag;
   const TagString: string; TagParams: TStrings; var ReplaceText: string);
 begin
   if TagString = 'main' then
-    ReplaceText:=backnumber.Content;
+    ReplaceText := backnumber.Content;
 end;
 
 procedure TWebModule1.WebModule1DefaultHandlerAction(Sender: TObject;
@@ -119,17 +120,17 @@ end;
 procedure TWebModule1.WebModule1imageAction(Sender: TObject;
   Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
 var
-  magid,newsid: integer;
+  magid, newsid: integer;
   str: string;
   data: TJSONObject;
   mem: TMemoryStream;
   raw: TBytes;
 begin
   data := TJSONObject.Create;
-  magid:=Request.QueryFields.Values['id'].ToInteger;
-  newsid:=Request.QueryFields.Values['num'].ToInteger;
-  str:=data.Values['data'].Value;
-  DataModule1.imageView(magid, newsid,data);
+  magid := Request.QueryFields.Values['id'].ToInteger;
+  newsid := Request.QueryFields.Values['num'].ToInteger;
+  str := data.Values['data'].Value;
+  DataModule1.imageView(magid, newsid, data);
   mem := TMemoryStream.Create;
   if data.Values['encode'].Value = 'true' then
   begin
@@ -138,7 +139,7 @@ begin
     Finalize(raw);
   end
   else
-    mem.WriteBuffer(@str,Length(str));
+    mem.WriteBuffer(@str, Length(str));
   mem.Position := 0;
   Response.ContentType := 'jpeg/image';
   Response.ContentStream := mem;
@@ -149,12 +150,12 @@ procedure TWebModule1.WebModule1login2Action(Sender: TObject;
 var
   data: TJSONObject;
 begin
-  data:=TJSONObject.Create;
-  data.AddPair('mail',Request.ContentFields.Values['mail']);
-  data.AddPair('password',Request.ContentFields.Values['password']);
-  writerId:=DataModule1.loginWriter(data);
+  data := TJSONObject.Create;
+  data.AddPair('mail', Request.ContentFields.Values['mail']);
+  data.AddPair('password', Request.ContentFields.Values['password']);
+  writerId := DataModule1.loginWriter(data);
   if writerId = 0 then
-    Handled:=false
+    Handled := false
   else
     Response.SendRedirect('/writer/top');
 end;
@@ -284,21 +285,21 @@ var
   stream, mem: TStream;
   data: TJSONObject;
 begin
-  num:=Request.QueryFields.Values['num'];
+  num := Request.QueryFields.Values['num'];
   if Request.MethodType = mtPost then
   begin
-    stream:=Request.Files[0].Stream;
+    stream := Request.Files[0].stream;
     mem := TMemoryStream.Create;
-    mem.CopyFrom(stream,stream.Size);
-    mem.Position:=0;
-    DataModule1.zipFile(writerId,num,mem);
+    mem.CopyFrom(stream, stream.Size);
+    mem.Position := 0;
+    DataModule1.zipFile(writerId, num, mem);
     mem.Free;
   end;
-  Response.ContentType:='text/html;charset=utf-8';
-  data:=TJSONObject.Create;
-  DataModule1.backNumber(num,data);
-  mustache:=TSynMustAche.Parse(upload.Content);
-  Response.Content:=mustache.RenderJSON(data.ToJSON);
+  Response.ContentType := 'text/html;charset=utf-8';
+  data := TJSONObject.Create;
+  DataModule1.backnumber(num, data);
+  mustache := TSynMustache.Parse(upload.Content);
+  Response.Content := mustache.RenderJSON(data.ToJSON);
 end;
 
 procedure TWebModule1.WebModule1writeMagAction(Sender: TObject;
@@ -347,7 +348,8 @@ begin
         if Request.ContentFields.Values['_method'] = 'put' then
           DataModule1.updateWriterId(writerId, data)
         else
-          writerId:=DataModule1.createWriterId(data);         ///var param?
+          writerId := DataModule1.createWriterId(data);
+        /// var param?
       end
       else
       begin
@@ -374,14 +376,14 @@ procedure TWebModule1.WebModule1writerpageAction(Sender: TObject;
 var
   data: TJSONObject;
 begin
-  Response.ContentType:='text/html;charset=utf-8';
-  data:=TJSONObject.Create;
+  Response.ContentType := 'text/html;charset=utf-8';
+  data := TJSONObject.Create;
   if writerId = 0 then
-    data.AddPair('login',TJSONFalse.Create)
+    data.AddPair('login', TJSONFalse.Create)
   else
-    data.AddPair('login',TJSONTrue.Create);
-  mustache:=TSynMustAche.Parse(writerpage.Content);
-  Response.Content:=mustache.RenderJSON(data.ToJSON);
+    data.AddPair('login', TJSONTrue.Create);
+  mustache := TSynMustache.Parse(writerpage.Content);
+  Response.Content := mustache.RenderJSON(data.ToJSON);
 end;
 
 procedure TWebModule1.WebModule1writerTopAction(Sender: TObject;
@@ -391,7 +393,7 @@ var
 begin
   if writerId = 0 then
   begin
-    Handled:=false;
+    Handled := false;
     Exit;
   end;
   data := TJSONObject.Create;

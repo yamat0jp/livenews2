@@ -56,6 +56,7 @@ type
     imagedata: TBlobField;
     imageencode: TBooleanField;
     imageimgId: TIntegerField;
+    newsnumber: TIntegerField;
     procedure DataModuleCreate(Sender: TObject);
   private
     { Private éŒ¾ }
@@ -129,8 +130,8 @@ const
 var
   d: TJSONObject;
   ar: TJSONArray;
-  mem: TStringList;
   blob: TStream;
+  str: string;
 begin
   if mag.Locate('magNum', num) = false then
     Exit;
@@ -138,7 +139,6 @@ begin
   ar := TJSONArray.Create;
   Data.AddPair('magnum', num);
   Data.AddPair('data', ar);
-  mem := TStringList.Create;
   with FDQuery1 do
   begin
     SQL.Clear;
@@ -149,17 +149,14 @@ begin
     begin
       d := TJSONObject.Create;
       ar.Add(d);
-      blob := CreateBlobStream(FieldByName('files'), bmRead);
-      mem.LoadFromStream(blob);
+      str:=FieldByName('files').AsString;
       if FieldByName('enabled').AsBoolean = true then
-        d.AddPair('text', mem.Text)
+        d.AddPair('text', str)
       else
         d.AddPair('text', con);
-      blob.Free;
       Next;
     end;
   end;
-  mem.Free;
 end;
 
 function TDataModule1.checkUserPassword(id: integer; password: string): Boolean;
@@ -322,7 +319,7 @@ var
   list: TStringList;
   name, str, str2, s, s2: string;
   i, j: integer;
-  imgid, nid: integer;
+  imgid, nid, num: integer;
   v: Variant;
   bytes: TBytes;
   procedure remove(tags: array of string);
@@ -336,7 +333,7 @@ var
       reverse := tag[2] = '/';
       for m := list.Count - 1 downto 0 do
       begin
-        j := Pos(tag, list[m]);
+        j := Pos(Copy(tag,1,Length(tag)-1), list[m]);
         if j > 0 then
         begin
           if reverse = true then
@@ -344,7 +341,17 @@ var
           else
           begin
             tmp := list[m];
-            Delete(tmp, 1, j + Length(tmp));
+            Delete(tmp, 1, j + Length(tag)-1);
+            repeat
+              j:=Pos('>',tmp);
+              if j > 0 then
+                Delete(tmp,1,j)
+              else
+              begin
+                list.Delete(m);
+                tmp:=list[m];
+              end;
+            until j > 0;
             list[m] := tmp;
             for n := 0 to m - 1 do
               list.Delete(0);
@@ -371,6 +378,8 @@ begin
     Open;
     nid := FieldByName('id').AsInteger + 1;
   end;
+  news.Last;
+  num:=news.FieldByName('number').AsInteger+1;
   Zip := TZipFIle.Create;
   list := TStringList.Create;
   Zip.Open(stream, zmRead);
@@ -390,8 +399,8 @@ begin
       Finalize(bytes);
       if i < 6000000 then
       begin
-        image.AppendRecord([imgId, v, nid, id, str, 'masasi', str2, true]);
-        inc(imgId);
+        image.AppendRecord([imgid, v, nid, id, str, 'masasi', str2, true]);
+        inc(imgid);
       end;
     end
     else if (str2 = '/text') and (str <> '') then
@@ -411,15 +420,16 @@ begin
           s2 := Format('/style?id=%d&name=', [id]);
           list[i] := ReplaceText(list[i], '../style/', s2);
         end;
-      news.AppendRecord([v, id, list.Text, Date, false, true]);
+      news.AppendRecord([num, v, id, list.Text, Date, false, true]);
+      inc(num);
     end
     else if (str2 = '/style') and (str <> '') then
     begin
       Zip.Read(name, stream, ziph);
       list.LoadFromStream(stream);
       stream.Free;
-      image.AppendRecord([imgId, v, nid, id, str, '', list.Text, false]);
-      inc(imgId);
+      image.AppendRecord([imgid, v, nid, id, str, '', list.Text, false]);
+      inc(imgid);
     end;
   end;
   list.Free;
@@ -749,10 +759,10 @@ begin
     ma := Data.Values['mail'].Value;
     pa := Data.Values['password'].Value;
     writer.AppendRecord([i, na, ma, pa]);
-    result:=i;
+    result := i;
   end
   else
-    result:=writer.FieldByName('writerid').AsInteger;
+    result := writer.FieldByName('writerid').AsInteger;
 end;
 
 function TDataModule1.titleView(magid, writerId: integer;

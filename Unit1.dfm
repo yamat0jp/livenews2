@@ -77,12 +77,17 @@ object DataModule1: TDataModule1
     Top = 80
   end
   object news: TFDTable
-    IndexFieldNames = 'magId;newsId'
+    IndexFieldNames = 'number;magId;newsId'
     Connection = MagazineConnection
     UpdateOptions.UpdateTableName = 'news'
     TableName = 'news'
     Left = 128
     Top = 184
+    object newsnumber: TIntegerField
+      AutoGenerateValue = arDefault
+      FieldName = 'number'
+      Origin = '`number`'
+    end
     object newsmagId: TIntegerField
       FieldName = 'magId'
       Origin = 'magId'

@@ -271,7 +271,7 @@ object WebModule1: TWebModule1
       '        <p>{{comment}}'
       '        {{#data}}'
       '                <hr>'
-      '                {{text}}'
+      '                {{&text}}'
       '        {{/data}}')
     Left = 304
     Top = 80
