@@ -648,6 +648,7 @@ begin
     Add(' db.writerId = writer.writerId and db.reader.id = :id order by day;');
   end;
   FDQuery1.ParamByName('id').AsInteger := id;
+  FDQuery1.Open;
   Data := makeTable(FDQuery1);
 end;
 

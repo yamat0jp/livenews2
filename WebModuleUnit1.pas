@@ -153,7 +153,10 @@ begin
   data.AddPair('mail',Request.ContentFields.Values['mail']);
   data.AddPair('password',Request.ContentFields.Values['password']);
   writerId:=DataModule1.loginWriter(data);
-  Response.SendRedirect('/writer/data');
+  if writerId = 0 then
+    Handled:=false
+  else
+    Response.SendRedirect('/writer/top');
 end;
 
 procedure TWebModule1.WebModule1loginAction(Sender: TObject;
@@ -317,7 +320,6 @@ procedure TWebModule1.WebModule1writerDataAction(Sender: TObject;
   Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
 var
   data: TJSONObject;
-  top: Boolean;
 begin
   with Request.ContentFields do
   begin
@@ -331,12 +333,14 @@ begin
       begin
         Handled := false;
         Exit;
-      end
-      else
-        top:=true;
+      end;
     mtPost:
       if Request.ContentFields.Values['_method'] = 'delete' then
-        DataModule1.deleteWriter(writerId)
+      begin
+        DataModule1.deleteWriter(writerId);
+        Response.SendRedirect('/writer/page');
+        Exit;
+      end
       else if DataModule1.existsMail(data.Values['mail'].Value) = false then
       begin
         data.AddPair('name', Request.ContentFields.Values['writer']);
@@ -346,7 +350,11 @@ begin
           writerId:=DataModule1.createWriterId(data);         ///var param?
       end
       else
+      begin
         { メールアドレスの2重登録 };
+        Response.SendRedirect('/writer/page');
+        Exit;
+      end;
     mtPut:
       DataModule1.updateWriterId(writerId, data);
     mtDelete:
@@ -356,10 +364,7 @@ begin
   data := TJSONObject.Create;
   DataModule1.custData(writerId, data);
   Response.ContentType := 'text/html;charset=utf-8';
-  if top = true then
-    mustache := TSynMustache.Parse(writerTop.Content)
-  else
-    mustache := TSynMustache.Parse(writerData.Content);
+  mustache := TSynMustache.Parse(writerData.Content);
   Response.Content := mustache.RenderJSON(data.ToJSON);
   data.Free;
 end;

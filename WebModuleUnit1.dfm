@@ -332,7 +332,7 @@ object WebModule1: TWebModule1
       '    </form>'
       '    {{/login}}'
       '    {{#login}}'
-      '        <form method=post action=/writer/logout>'
+      '        <form method=post action=/logout>'
       '        <input type=submit value=logout>'
       '        </form>'
       '    <p><a href=/writer/top>'#12507#12540#12512'</a>'#12288#12289#12288'<a href=/writer/data>'#24773#22577'</a>'
