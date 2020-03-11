@@ -204,6 +204,9 @@ object DataModule1: TDataModule1
     TableName = 'image'
     Left = 48
     Top = 184
+    object imageimgId: TIntegerField
+      FieldName = 'imgId'
+    end
     object imagemagId: TIntegerField
       FieldName = 'magId'
       Origin = 'magId'
@@ -231,11 +234,10 @@ object DataModule1: TDataModule1
       FieldName = 'copyright'
       Origin = 'copyright'
     end
-    object imagedata: TWideMemoField
+    object imagedata: TBlobField
       AutoGenerateValue = arDefault
       FieldName = 'data'
       Origin = '`data`'
-      BlobType = ftWideMemo
     end
     object imageencode: TBooleanField
       AutoGenerateValue = arDefault

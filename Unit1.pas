@@ -47,14 +47,15 @@ type
     newschanged: TBooleanField;
     newsenabled: TBooleanField;
     newsfiles: TWideMemoField;
+    FDQuery2: TFDQuery;
     imagemagId: TIntegerField;
     imagenewsId: TIntegerField;
     imagewriterId: TIntegerField;
     imagename: TWideStringField;
-    imagedata: TWideMemoField;
-    FDQuery2: TFDQuery;
     imagecopyright: TWideStringField;
+    imagedata: TBlobField;
     imageencode: TBooleanField;
+    imageimgId: TIntegerField;
     procedure DataModuleCreate(Sender: TObject);
   private
     { Private êÈåæ }
@@ -84,7 +85,7 @@ type
     procedure magIdOn(id, magid: integer);
     procedure createMagId(id: integer; out Data: TJSONObject);
     procedure postMessage(id: integer; Data: TJSONObject);
-    procedure createWriterId(Data: TJSONObject);
+    function createWriterId(Data: TJSONObject): integer;
     procedure readerData(id: integer; out Data: TJSONObject);
     function titleView(magid, writerId: integer; out Data: TJSONObject)
       : Boolean;
@@ -220,7 +221,7 @@ begin
   FDQuery1.ExecSQL
     (tmp + 'news(magId int, newsId int, files text, day date, changed bool, enabled bool, primary key (magId,newsId));');
   FDQuery1.ExecSQL
-    (tmp + 'image(magId int, newsId int, writerId int, name varchar(20), copyright varchar(20), data mediumblob, encode bool, primary key (magId,newsId));');
+    (tmp + 'image(imgId int primary key, magId int, newsId int, writerId int, name varchar(20), copyright varchar(20), data longblob, encode bool);');
   DB.Open;
   mag.Open;
   writer.Open;
@@ -321,7 +322,7 @@ var
   list: TStringList;
   name, str, str2, s, s2: string;
   i, j: integer;
-  nid: integer;
+  imgid, nid: integer;
   v: Variant;
   bytes: TBytes;
   procedure remove(tags: array of string);
@@ -362,11 +363,13 @@ begin
     Exit;
   with FDQuery1 do
   begin
+    Open('select MAX(imgId) as id from image;');
+    imgid := FieldByName('id').AsInteger + 1;
     SQL.Clear;
     SQL.Add('select MAX(newsId) as id from news where magId = :id;');
     ParamByName('id').AsInteger := v;
     Open;
-    nid := FieldByName('id').AsInteger+1;
+    nid := FieldByName('id').AsInteger + 1;
   end;
   Zip := TZipFIle.Create;
   list := TStringList.Create;
@@ -382,9 +385,14 @@ begin
     if (str2 = '/images') and (str <> '') then
     begin
       Zip.Read(name, bytes);
-      image.AppendRecord([v, nid, id, str, 'masasi',
-        TNetEncoding.Base64.EncodeBytesToString(bytes), true]);
+      str2 := TNetEncoding.Base64.EncodeBytesToString(bytes);
+      i := str2.Length;
       Finalize(bytes);
+      if i < 6000000 then
+      begin
+        image.AppendRecord([imgId, v, nid, id, str, 'masasi', str2, true]);
+        inc(imgId);
+      end;
     end
     else if (str2 = 'text') and (str <> '') then
     begin
@@ -407,11 +415,12 @@ begin
     end
     else if (str2 = 'style') and (str <> '') then
     begin
-      Zip.Read(name,stream,ziph);
-      image.AppendRecord([v, nid, id, str, '', list.Text, false]);
+      Zip.Read(name, stream, ziph);
+      list.LoadFromStream(stream);
       stream.Free;
+      image.AppendRecord([imgId, v, nid, id, str, '', list.Text, false]);
+      inc(imgId);
     end;
-    list.LoadFromStream(stream);
   end;
   list.Free;
   Zip.Free;
@@ -725,7 +734,7 @@ begin
   end;
 end;
 
-procedure TDataModule1.createWriterId(Data: TJSONObject);
+function TDataModule1.createWriterId(Data: TJSONObject): integer;
 var
   i: integer;
   na, ma, pa: string;

@@ -153,7 +153,7 @@ begin
   data.AddPair('mail',Request.ContentFields.Values['mail']);
   data.AddPair('password',Request.ContentFields.Values['password']);
   writerId:=DataModule1.loginWriter(data);
-  Response.SendRedirect('/writer/page');
+  Response.SendRedirect('/writer/top');
 end;
 
 procedure TWebModule1.WebModule1loginAction(Sender: TObject;
@@ -340,7 +340,7 @@ begin
         if Request.ContentFields.Values['_method'] = 'put' then
           DataModule1.updateWriterId(writerId, data)
         else
-          DataModule1.createWriterId(data);
+          writerId:=DataModule1.createWriterId(data);         ///var param?
       end
       else
         { メールアドレスの2重登録 };
