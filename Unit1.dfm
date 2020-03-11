@@ -73,7 +73,7 @@ object DataModule1: TDataModule1
     Connection = MagazineConnection
     SQL.Strings = (
       '')
-    Left = 48
+    Left = 72
     Top = 80
   end
   object news: TFDTable
@@ -198,10 +198,54 @@ object DataModule1: TDataModule1
     end
   end
   object image: TFDTable
+    IndexFieldNames = 'magId;newsId'
     Connection = MagazineConnection
     UpdateOptions.UpdateTableName = 'image'
     TableName = 'image'
     Left = 48
     Top = 184
+    object imagemagId: TIntegerField
+      FieldName = 'magId'
+      Origin = 'magId'
+      ProviderFlags = [pfInUpdate, pfInWhere, pfInKey]
+      Required = True
+    end
+    object imagenewsId: TIntegerField
+      FieldName = 'newsId'
+      Origin = 'newsId'
+      ProviderFlags = [pfInUpdate, pfInWhere, pfInKey]
+      Required = True
+    end
+    object imagewriterId: TIntegerField
+      AutoGenerateValue = arDefault
+      FieldName = 'writerId'
+      Origin = 'writerId'
+    end
+    object imagename: TWideStringField
+      AutoGenerateValue = arDefault
+      FieldName = 'name'
+      Origin = '`name`'
+    end
+    object imagecopyright: TWideStringField
+      AutoGenerateValue = arDefault
+      FieldName = 'copyright'
+      Origin = 'copyright'
+    end
+    object imagedata: TWideMemoField
+      AutoGenerateValue = arDefault
+      FieldName = 'data'
+      Origin = '`data`'
+      BlobType = ftWideMemo
+    end
+    object imageencode: TBooleanField
+      AutoGenerateValue = arDefault
+      FieldName = 'encode'
+      Origin = 'encode'
+    end
+  end
+  object FDQuery2: TFDQuery
+    Connection = MagazineConnection
+    Left = 16
+    Top = 80
   end
 end

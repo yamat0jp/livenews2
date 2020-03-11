@@ -47,10 +47,19 @@ type
     newschanged: TBooleanField;
     newsenabled: TBooleanField;
     newsfiles: TWideMemoField;
+    imagemagId: TIntegerField;
+    imagenewsId: TIntegerField;
+    imagewriterId: TIntegerField;
+    imagename: TWideStringField;
+    imagedata: TWideMemoField;
+    FDQuery2: TFDQuery;
+    imagecopyright: TWideStringField;
+    imageencode: TBooleanField;
     procedure DataModuleCreate(Sender: TObject);
   private
     { Private éŒ¾ }
     function makeTable(Sender: TObject): TJSONObject;
+    procedure magData(id: integer; out Data: TJSONObject);
   public
     { Public éŒ¾ }
     procedure AddMagazine(id: integer; out Data: TJSONObject);
@@ -70,7 +79,6 @@ type
     procedure viewList(id: integer; out Data: TJSONObject);
     procedure magazines(id: integer; out Data: TJSONObject);
     procedure magListAll(id: integer; out Data: TJSONObject);
-    procedure magData(id: integer; out Data: TJSONObject);
     function magid(name: string): integer;
     procedure magIdOff(id, magid: integer);
     procedure magIdOn(id, magid: integer);
@@ -85,9 +93,8 @@ type
     function loginReader(Data: TJSONObject): integer;
     function loginWriter(Data: TJSONObject): integer;
     procedure mainView(id: integer; out Data: TJSONObject);
-    procedure imageView(id: integer; out Data: TJSONObject);
-    function imageId(Data: TJSONObject): integer;
-    procedure zipFile(magNum: string; stream: TStream);
+    procedure imageView(magid, newsId: integer; out Data: TJSONObject);
+    procedure zipFile(id: integer; magNum: string; stream: TStream);
   end;
 
 var
@@ -128,6 +135,7 @@ begin
     Exit;
   Data := TJSONObject.Create;
   ar := TJSONArray.Create;
+  Data.AddPair('magnum', num);
   Data.AddPair('data', ar);
   mem := TStringList.Create;
   with FDQuery1 do
@@ -212,7 +220,7 @@ begin
   FDQuery1.ExecSQL
     (tmp + 'news(magId int, newsId int, files text, day date, changed bool, enabled bool, primary key (magId,newsId));');
   FDQuery1.ExecSQL
-    (tmp + 'image(magId int, newsId int, writerId int, name varchar(20), data text, primary key (magId,newsId));');
+    (tmp + 'image(magId int, newsId int, writerId int, name varchar(20), copyright varchar(20), data mediumblob, encode bool, primary key (magId,newsId));');
   DB.Open;
   mag.Open;
   writer.Open;
@@ -306,18 +314,51 @@ begin
 
 end;
 
-procedure TDataModule1.zipFile(magNum: string; stream: TStream);
+procedure TDataModule1.zipFile(id: integer; magNum: string; stream: TStream);
 var
   Zip: TZipFIle;
   ziph: TZipHeader;
   list: TStringList;
   name, str, str2, s, s2: string;
-  id, i, j: integer;
+  i, j: integer;
+  nid: integer;
   v: Variant;
   bytes: TBytes;
+  procedure remove(tags: array of string);
+  var
+    m, n: integer;
+    reverse: Boolean;
+    tag, tmp: string;
+  begin
+    for tag in tags do
+    begin
+      reverse := tag[2] = '/';
+      for m := list.Count - 1 downto 0 do
+      begin
+        j := Pos(tag, list[m]);
+        if j > 0 then
+        begin
+          if reverse = true then
+            list[m] := Copy(list[m], 1, j - 1)
+          else
+          begin
+            tmp := list[m];
+            Delete(tmp, 1, j + Length(tmp));
+            list[m] := tmp;
+            for n := 0 to m - 1 do
+              list.Delete(0);
+          end;
+          break;
+        end
+        else if reverse = true then
+          list.Delete(m);
+      end;
+    end;
+  end;
+
 begin
   v := mag.Lookup('magNum', magNum, 'magId');
-  if VarIsNull(v) = true then
+  if (id = 0) or (VarIsNull(v) = true) then
     Exit;
   with FDQuery1 do
   begin
@@ -325,7 +366,7 @@ begin
     SQL.Add('select MAX(newsId) as id from news where magId = :id;');
     ParamByName('id').AsInteger := v;
     Open;
-    id := FieldByName('id').AsInteger;
+    nid := FieldByName('id').AsInteger+1;
   end;
   Zip := TZipFIle.Create;
   list := TStringList.Create;
@@ -338,30 +379,37 @@ begin
     str := Copy(s, j + 1, i);
     Delete(s, j, i);
     str2 := Copy(s, LastDelimiter('/', s), i);
-    if (str = '/images') and (str2 <> '') then
+    if (str2 = '/images') and (str <> '') then
     begin
       Zip.Read(name, bytes);
-      image.AppendRecord([id, id, str2,
-        TNetEncoding.Base64.EncodeBytesToString(bytes)]);
+      image.AppendRecord([v, nid, id, str, 'masasi',
+        TNetEncoding.Base64.EncodeBytesToString(bytes), true]);
+      Finalize(bytes);
     end
-    else if ((str = 'style') or (str = 'text')) and (str2 <> '') then
+    else if (str2 = 'text') and (str <> '') then
     begin
       Zip.Read(name, stream, ziph);
       list.LoadFromStream(stream);
       stream.Free;
-      if str = 'text' then
-        for i := 0 to list.Count - 1 do
-          if Pos('../images/', list[i]) > 0 then
-          begin
-            s2 := Format('/images?id=%d&name=', [id]);
-            list[i] := ReplaceText(list[i], '../images/', s2);
-          end
-          else if Pos('../style/', list[i]) > 0 then
-          begin
-            s2 := Format('/style?id=%d&name=', [id]);
-            list[i] := ReplaceText(list[i], '../style/', s2);
-          end;
-      image.AppendRecord([id, id, str2, list.Text]);
+      remove(['<body>', '</body>']);
+      for i := 0 to list.Count - 1 do
+        if Pos('../images/', list[i]) > 0 then
+        begin
+          s2 := Format('/images?id=%d&name=', [id]);
+          list[i] := ReplaceText(list[i], '../images/', s2);
+        end
+        else if Pos('../style/', list[i]) > 0 then
+        begin
+          s2 := Format('/style?id=%d&name=', [id]);
+          list[i] := ReplaceText(list[i], '../style/', s2);
+        end;
+      news.AppendRecord([v, id, list.Text, Date, false, true]);
+    end
+    else if (str2 = 'style') and (str <> '') then
+    begin
+      Zip.Read(name,stream,ziph);
+      image.AppendRecord([v, nid, id, str, '', list.Text, false]);
+      stream.Free;
     end;
     list.LoadFromStream(stream);
   end;
@@ -437,23 +485,17 @@ begin
   Data := makeTable(FDQuery1);
 end;
 
-function TDataModule1.imageId(Data: TJSONObject): integer;
-var
-  writerId, number: integer;
-begin
-  writerId := Data.Values['id'].Value.ToInteger;
-  number := Data.Values['number'].Value.ToInteger;
-  if image.Locate('writerId;number', VarArrayOf([writerId, number])) = true then
-    result := image.FieldByName('id').AsInteger;
-end;
-
-procedure TDataModule1.imageView(id: integer; out Data: TJSONObject);
+procedure TDataModule1.imageView(magid, newsId: integer; out Data: TJSONObject);
 begin
   Data := TJSONObject.Create;
-  if image.Locate('id', id) = true then
+  if image.Locate('magid,newsid', VarArrayOf([magid, newsId])) = true then
   begin
     Data.AddPair('name', image.FieldByName('name').AsString);
     Data.AddPair('data', image.FieldByName('data').AsString);
+    if image.FieldByName('encode').AsBoolean = true then
+      Data.AddPair('encode', TJSONTrue.Create)
+    else
+      Data.AddPair('encode', TJSONFalse.Create);
   end;
 end;
 
@@ -484,16 +526,18 @@ end;
 procedure TDataModule1.magData(id: integer; out Data: TJSONObject);
 begin
   FDQuery1.SQL.Clear;
-  FDQuery1.SQL.Add('select * from mag where magid = :id;');
+  FDQuery1.SQL.Add('select * from mag where magId = :id;');
   FDQuery1.ParamByName('id').AsInteger := id;
   FDQuery1.Open;
   if FDQuery1.FieldByName('enable').AsBoolean = true then
   begin
     Data := TJSONObject.Create;
+    Data.AddPair('magNum', FDQuery1.FieldByName('magNum').AsString);
     Data.AddPair('name', FDQuery1.FieldByName('magName').AsString);
     Data.AddPair('comment', FDQuery1.FieldByName('comment').AsString);
     Data.AddPair('day', FDQuery1.FieldByName('day').AsString);
     Data.AddPair('last', FDQuery1.FieldByName('lastDay').AsString);
+    id := FDQuery1.FieldByName('magid').AsInteger;
     FDQuery1.SQL.Clear;
     FDQuery1.SQL.Add
       ('select COUNT(*) as count from db where magid = :id and readerid <> 0;');
@@ -605,19 +649,20 @@ var
   ar: TJSONArray;
 begin
   ar := TJSONArray.Create;
-  DB.Filter := 'writerid = ' + id.ToString + ' and readerid = 0';
-  DB.Filtered := true;
-  try
-    DB.First;
-    while DB.Eof = false do
+  with FDQuery2 do
+  begin
+    SQL.Clear;
+    SQL.Add('select * from db where writerid = :id and readerid = 0;');
+    ParamByName('id').AsInteger := id;
+    Open;
+    while Eof = false do
     begin
       d := TJSONObject.Create;
-      magData(DB.FieldByName('magid').AsInteger, d);
+      magData(FieldByName('magid').AsInteger, d);
       ar.Add(d);
-      DB.Next;
+      Next;
     end;
-  finally
-    DB.Filtered := false;
+    Close;
   end;
   if ar.Count = 0 then
   begin

@@ -220,7 +220,9 @@ object WebModule1: TWebModule1
       '        <p>'#30331#37682#20013#12398#12510#12460#12472#12531#12391#12377
       '        {{#mag}}'
       '                <hr>'
-      '                <p><a href=/upload>'#12479#12452#12488#12523'{{name}}</a>'
+      
+        '                <p><a href=/upload?num={{magnum}}>'#12479#12452#12488#12523'{{name}}</' +
+        'a>'
       '                <p>{{comment}}'
       '                <p>'#30331#37682#26085'{{day}}'
       '                <p>'#26368#32066#26356#26032#26085'{{last}}'
@@ -355,8 +357,8 @@ object WebModule1: TWebModule1
       '<body>'
       '        <h1>UPLOAD PAGE</h1>'
       
-        '        <form method=post action=/upload enctype="multipart/form' +
-        '-data">'
+        '        <form method=post action=/upload?num={{magnum}} enctype=' +
+        '"multipart/form-data" accept="*.epub">'
       '        <input type=file name=epub>'
       '        <input type=submit value="'#36865#20449'">'
       '        </form>'

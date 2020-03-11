@@ -62,7 +62,7 @@ var
 
 implementation
 
-uses SynMustache, SynCommons, System.JSON, Unit1, System.NetEncoding, System.Zip;
+uses SynMustache, SynCommons, System.JSON, Unit1, System.NetEncoding, System.Zip, ReqMulti;
 
 { %CLASSGROUP 'Vcl.Controls.TControl' }
 
@@ -119,21 +119,27 @@ end;
 procedure TWebModule1.WebModule1imageAction(Sender: TObject;
   Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
 var
-  id: integer;
+  magid,newsid: integer;
+  str: string;
   data: TJSONObject;
   mem: TMemoryStream;
   raw: TBytes;
 begin
   data := TJSONObject.Create;
-  data.AddPair('id', TJSONNumber.Create(Request.QueryFields.Values['id']));
-  data.AddPair('number', TJSONNumber.Create(Request.QueryFields.Values['num']));
-  id := DataModule1.imageId(data);
-  DataModule1.imageView(id, data);
+  magid:=Request.QueryFields.Values['id'].ToInteger;
+  newsid:=Request.QueryFields.Values['num'].ToInteger;
+  str:=data.Values['data'].Value;
+  DataModule1.imageView(magid, newsid,data);
   mem := TMemoryStream.Create;
-  raw := TNetEncoding.Base64.DecodeStringToBytes(data.Values['data'].Value);
-  mem.WriteBuffer(raw, Length(raw));
+  if data.Values['encode'].Value = 'true' then
+  begin
+    raw := TNetEncoding.Base64.DecodeStringToBytes(str);
+    mem.WriteBuffer(raw, Length(raw));
+    Finalize(raw);
+  end
+  else
+    mem.WriteBuffer(@str,Length(str));
   mem.Position := 0;
-  Finalize(raw);
   Response.ContentType := 'jpeg/image';
   Response.ContentStream := mem;
 end;
@@ -271,14 +277,18 @@ procedure TWebModule1.WebModule1uploadAction(Sender: TObject;
   Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
 var
   num: string;
-  mem: TMemoryStream;
+
+  stream, mem: TStream;
   data: TJSONObject;
 begin
+  num:=Request.QueryFields.Values['num'];
   if Request.MethodType = mtPost then
   begin
-    mem:=TMemoryStream.Create;
-    num:=Request.ContentFields.Values['magNum'];
-    DataModule1.zipFile(num,mem);
+    stream:=Request.Files[0].Stream;
+    mem := TMemoryStream.Create;
+    mem.CopyFrom(stream,stream.Size);
+    mem.Position:=0;
+    DataModule1.zipFile(writerId,num,mem);
     mem.Free;
   end;
   Response.ContentType:='text/html;charset=utf-8';
