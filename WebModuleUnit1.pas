@@ -129,7 +129,6 @@ begin
   data := TJSONObject.Create;
   magid := Request.QueryFields.Values['id'].ToInteger;
   newsid := Request.QueryFields.Values['num'].ToInteger;
-  str := data.Values['data'].Value;
   DataModule1.imageView(magid, newsid, data);
   mem := TMemoryStream.Create;
   if data.Values['encode'].Value = 'true' then

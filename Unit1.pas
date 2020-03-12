@@ -53,10 +53,10 @@ type
     newsnumber: TIntegerField;
     newsmagId: TIntegerField;
     newsnewsId: TIntegerField;
-    newsfiles: TBlobField;
     newsday: TDateField;
     newschanged: TBooleanField;
     newsenabled: TBooleanField;
+    newsfiles: TWideMemoField;
     procedure DataModuleCreate(Sender: TObject);
   private
     { Private êÈåæ }
@@ -130,8 +130,6 @@ const
 var
   d: TJSONObject;
   ar: TJSONArray;
-  blob: TStream;
-  list: TStringList;
 begin
   if mag.Locate('magNum', num) = false then
     Exit;
@@ -139,7 +137,6 @@ begin
   ar := TJSONArray.Create;
   Data.AddPair('magnum', num);
   Data.AddPair('data', ar);
-  list:=TStringList.Create;
   with FDQuery1 do
   begin
     SQL.Clear;
@@ -150,18 +147,13 @@ begin
     begin
       d := TJSONObject.Create;
       ar.Add(d);
-      blob:=CreateBlobStream(FieldByName('files'),bmRead);
-      blob.Position:=0;
-      list.LoadFromStream(blob,TEncoding.UTF8);
-      blob.Free;
       if FieldByName('enabled').AsBoolean = true then
-        d.AddPair('text', list.Text)
+        d.AddPair('text', FieldByName('files').AsString)
       else
         d.AddPair('text', con);
       Next;
     end;
   end;
-  list.Free;
 end;
 
 function TDataModule1.checkUserPassword(id: integer; password: string): Boolean;
@@ -221,7 +213,7 @@ begin
   FDQuery1.ExecSQL
     (tmp + 'reader(readerId int primary key, reader varchar(20), mail varchar(20), password varchar(20));');
   FDQuery1.ExecSQL
-    (tmp + 'news(number int primary key, magId int, newsId int, files text character set utf8, day date, changed bool, enabled bool);');
+    (tmp + 'news(number int primary key, magId int, newsId int, files mediumtext character set utf8, day date, changed bool, enabled bool);');
   FDQuery1.ExecSQL
     (tmp + 'image(imgId int primary key, magId int, newsId int, writerId int, name varchar(20), copyright varchar(20), data longblob, encode bool);');
   DB.Open;
@@ -404,20 +396,20 @@ begin
       Finalize(bytes);
       if i < 6000000 then
       begin
-        image.AppendRecord([imgid, v, nid, id, str, 'masasi', str2, true]);
+        image.AppendRecord([imgid, v, nid, id, str, 'Ç‹Ç≥Çµ', str2, true]);
         inc(imgid);
       end;
     end
     else if (str2 = '/text') and (str <> '') then
     begin
       Zip.Read(name, stream, ziph);
-      list.LoadFromStream(stream);
+      list.LoadFromStream(stream,TEncoding.UTF8);
       stream.Free;
       remove(['<body>', '</body>']);
       for i := 0 to list.Count - 1 do
         if Pos('../images/', list[i]) > 0 then
         begin
-          s2 := Format('/images?id=%d&name=', [id]);
+          s2 := Format('/image?id=%d&name=', [id]);
           list[i] := ReplaceText(list[i], '../images/', s2);
         end
         else if Pos('../style/', list[i]) > 0 then
@@ -425,7 +417,7 @@ begin
           s2 := Format('/style?id=%d&name=', [id]);
           list[i] := ReplaceText(list[i], '../style/', s2);
         end;
-      news.AppendRecord([num, v, id, Utf8Encode(list.Text), Date, false, true]);
+      news.AppendRecord([num, v, id, list.Text, Date, false, true]);
       inc(num);
     end
     else if (str2 = '/style') and (str <> '') then

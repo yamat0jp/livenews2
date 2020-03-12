@@ -98,10 +98,11 @@ object DataModule1: TDataModule1
       FieldName = 'newsId'
       Origin = 'newsId'
     end
-    object newsfiles: TBlobField
+    object newsfiles: TWideMemoField
       AutoGenerateValue = arDefault
       FieldName = 'files'
       Origin = 'files'
+      BlobType = ftWideMemo
     end
     object newsday: TDateField
       AutoGenerateValue = arDefault
