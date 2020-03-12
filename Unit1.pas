@@ -423,7 +423,7 @@ begin
     else if (str2 = '/style') and (str <> '') then
     begin
       Zip.Read(name, stream, ziph);
-      list.LoadFromStream(stream);
+      list.LoadFromStream(stream, TEncoding.UTF8);
       stream.Free;
       image.AppendRecord([imgid, v, nid, id, str, '', list.Text, false]);
       inc(imgid);
