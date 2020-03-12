@@ -120,16 +120,19 @@ end;
 procedure TWebModule1.WebModule1imageAction(Sender: TObject;
   Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
 var
-  magid, newsid: integer;
+  magnum, name: string;
+  newsid: integer;
   str: string;
   data: TJSONObject;
   mem: TMemoryStream;
   raw: TBytes;
 begin
   data := TJSONObject.Create;
-  magid := Request.QueryFields.Values['id'].ToInteger;
-  newsid := Request.QueryFields.Values['num'].ToInteger;
-  DataModule1.imageView(magid, newsid, data);
+  newsid:= Request.QueryFields.Values['id'].ToInteger;
+  magnum := Request.QueryFields.Values['num'];
+  name:=Request.QueryFields.Values['name'];
+  DataModule1.imageView(magNum, name, newsid, data);
+  str:=data.Values['data'].Value;
   mem := TMemoryStream.Create;
   if data.Values['encode'].Value = 'true' then
   begin
@@ -138,7 +141,7 @@ begin
     Finalize(raw);
   end
   else
-    mem.WriteBuffer(@str, Length(str));
+    mem.WriteBuffer(PChar(str)^, SizeOf(Char)*Length(str));
   mem.Position := 0;
   Response.ContentType := 'jpeg/image';
   Response.ContentStream := mem;

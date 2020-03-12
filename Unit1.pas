@@ -95,7 +95,7 @@ type
     function loginReader(Data: TJSONObject): integer;
     function loginWriter(Data: TJSONObject): integer;
     procedure mainView(id: integer; out Data: TJSONObject);
-    procedure imageView(magid, newsId: integer; out Data: TJSONObject);
+    procedure imageView(magNum, name: string; newsId: integer; out Data: TJSONObject);
     procedure zipFile(id: integer; magNum: string; stream: TStream);
   end;
 
@@ -409,7 +409,7 @@ begin
       for i := 0 to list.Count - 1 do
         if Pos('../images/', list[i]) > 0 then
         begin
-          s2 := Format('/image?id=%d&name=', [id]);
+          s2 := Format('/image?num=%s&id=%d&name=', [magNum,id]);
           list[i] := ReplaceText(list[i], '../images/', s2);
         end
         else if Pos('../style/', list[i]) > 0 then
@@ -501,10 +501,15 @@ begin
   Data := makeTable(FDQuery1);
 end;
 
-procedure TDataModule1.imageView(magid, newsId: integer; out Data: TJSONObject);
+procedure TDataModule1.imageView(magNum, name: string; newsId: integer; out Data: TJSONObject);
+var
+  id: Variant;
 begin
+  id:=mag.Lookup('magnum',magnum,'magid');
+  if VarIsNull(id) = true then
+    exit;
   Data := TJSONObject.Create;
-  if image.Locate('magid,newsid', VarArrayOf([magid, newsId])) = true then
+  if image.Locate('magid;newsid;name', VarArrayOf([id, newsId,name])) = true then
   begin
     Data.AddPair('name', image.FieldByName('name').AsString);
     Data.AddPair('data', image.FieldByName('data').AsString);
