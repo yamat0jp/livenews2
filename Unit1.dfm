@@ -89,22 +89,19 @@ object DataModule1: TDataModule1
       Origin = '`number`'
     end
     object newsmagId: TIntegerField
+      AutoGenerateValue = arDefault
       FieldName = 'magId'
       Origin = 'magId'
-      ProviderFlags = [pfInUpdate, pfInWhere, pfInKey]
-      Required = True
     end
     object newsnewsId: TIntegerField
+      AutoGenerateValue = arDefault
       FieldName = 'newsId'
       Origin = 'newsId'
-      ProviderFlags = [pfInUpdate, pfInWhere, pfInKey]
-      Required = True
     end
-    object newsfiles: TWideMemoField
+    object newsfiles: TBlobField
       AutoGenerateValue = arDefault
       FieldName = 'files'
       Origin = 'files'
-      BlobType = ftWideMemo
     end
     object newsday: TDateField
       AutoGenerateValue = arDefault

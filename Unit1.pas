@@ -41,12 +41,6 @@ type
     dbmagId: TIntegerField;
     dbreaderId: TIntegerField;
     dbwriterId: TIntegerField;
-    newsmagId: TIntegerField;
-    newsnewsId: TIntegerField;
-    newsday: TDateField;
-    newschanged: TBooleanField;
-    newsenabled: TBooleanField;
-    newsfiles: TWideMemoField;
     FDQuery2: TFDQuery;
     imagemagId: TIntegerField;
     imagenewsId: TIntegerField;
@@ -57,6 +51,12 @@ type
     imageencode: TBooleanField;
     imageimgId: TIntegerField;
     newsnumber: TIntegerField;
+    newsmagId: TIntegerField;
+    newsnewsId: TIntegerField;
+    newsfiles: TBlobField;
+    newsday: TDateField;
+    newschanged: TBooleanField;
+    newsenabled: TBooleanField;
     procedure DataModuleCreate(Sender: TObject);
   private
     { Private êÈåæ }
@@ -131,7 +131,7 @@ var
   d: TJSONObject;
   ar: TJSONArray;
   blob: TStream;
-  str: string;
+  list: TStringList;
 begin
   if mag.Locate('magNum', num) = false then
     Exit;
@@ -139,6 +139,7 @@ begin
   ar := TJSONArray.Create;
   Data.AddPair('magnum', num);
   Data.AddPair('data', ar);
+  list:=TStringList.Create;
   with FDQuery1 do
   begin
     SQL.Clear;
@@ -149,14 +150,18 @@ begin
     begin
       d := TJSONObject.Create;
       ar.Add(d);
-      str:=FieldByName('files').AsString;
+      blob:=CreateBlobStream(FieldByName('files'),bmRead);
+      blob.Position:=0;
+      list.LoadFromStream(blob,TEncoding.UTF8);
+      blob.Free;
       if FieldByName('enabled').AsBoolean = true then
-        d.AddPair('text', str)
+        d.AddPair('text', list.Text)
       else
         d.AddPair('text', con);
       Next;
     end;
   end;
+  list.Free;
 end;
 
 function TDataModule1.checkUserPassword(id: integer; password: string): Boolean;
@@ -216,7 +221,7 @@ begin
   FDQuery1.ExecSQL
     (tmp + 'reader(readerId int primary key, reader varchar(20), mail varchar(20), password varchar(20));');
   FDQuery1.ExecSQL
-    (tmp + 'news(number int, magId int, newsId int, files text, day date, changed bool, enabled bool);');
+    (tmp + 'news(number int primary key, magId int, newsId int, files text character set utf8, day date, changed bool, enabled bool);');
   FDQuery1.ExecSQL
     (tmp + 'image(imgId int primary key, magId int, newsId int, writerId int, name varchar(20), copyright varchar(20), data longblob, encode bool);');
   DB.Open;
@@ -420,7 +425,7 @@ begin
           s2 := Format('/style?id=%d&name=', [id]);
           list[i] := ReplaceText(list[i], '../style/', s2);
         end;
-      news.AppendRecord([num, v, id, list.Text, Date, false, true]);
+      news.AppendRecord([num, v, id, Utf8Encode(list.Text), Date, false, true]);
       inc(num);
     end
     else if (str2 = '/style') and (str <> '') then
@@ -716,7 +721,7 @@ begin
       if FieldByName('changed').AsBoolean = true then
         d.AddPair('hint', Format('Ç±ÇÃãLéñÇÕçXêVÇ≥ÇÍÇ‹ÇµÇΩ:(%s)ì˙.', [day]));
       blob := CreateBlobStream(FieldByName('files'), bmRead);
-      mem.LoadFromStream(blob);
+      mem.LoadFromStream(blob,TEncoding.UTF8);
       blob.Free;
       d.AddPair('magName', FieldByName('magName').AsString);
       d.AddPair('writer', FieldByName('writer').AsString);

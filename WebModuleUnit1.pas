@@ -155,7 +155,7 @@ begin
   data.AddPair('password', Request.ContentFields.Values['password']);
   writerId := DataModule1.loginWriter(data);
   if writerId = 0 then
-    Handled := false
+    Response.SendRedirect('/writer/page')
   else
     Response.SendRedirect('/writer/top');
 end;
