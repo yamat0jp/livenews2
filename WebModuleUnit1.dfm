@@ -167,6 +167,15 @@ object WebModule1: TWebModule1
         'ype=password name=password>'
       '        <input type=submit>'
       '        </form>'
+      '        <p>'#26032#35215#30331#37682
+      '        <form method=post action=/reader/data>'
+      
+        '        <p>name : <input type=text name=reader> mail : <input ty' +
+        'pe=text name=mail>'
+      
+        '        password : <input type=password name=password><input typ' +
+        'e=submit>'
+      '        </form>'
       '    {{/id}}'
       '    {{#items}}'
       '        {{#enable}}'
@@ -293,7 +302,7 @@ object WebModule1: TWebModule1
       '        <hr>'
       '                <p>[{{magName}}] ({{day}})'
       '                <p>by {{writer}}'
-      '                {{text}}'
+      '                {{&text}}'
       '                {{#changed}}'
       '                        <p>{{hint}}'
       '                {{/changed}}'

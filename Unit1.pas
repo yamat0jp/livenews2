@@ -700,13 +700,11 @@ end;
 function TDataModule1.makeTable(Sender: TObject): TJSONObject;
 var
   day: string;
-  blob: TStream;
-  mem: TStringList;
+  tx: string;
   ar: TJSONArray;
   d: TJSONObject;
 begin
   ar := TJSONArray.Create;
-  mem := TStringList.Create;
   with Sender as TFDQuery do
   begin
     First;
@@ -717,17 +715,14 @@ begin
       day := FieldByName('day').AsString;
       if FieldByName('changed').AsBoolean = true then
         d.AddPair('hint', Format('Ç±ÇÃãLéñÇÕçXêVÇ≥ÇÍÇ‹ÇµÇΩ:(%s)ì˙.', [day]));
-      blob := CreateBlobStream(FieldByName('files'), bmRead);
-      mem.LoadFromStream(blob,TEncoding.UTF8);
-      blob.Free;
+      tx:=FieldByName('files').AsString;
       d.AddPair('magName', FieldByName('magName').AsString);
       d.AddPair('writer', FieldByName('writer').AsString);
-      d.AddPair('text', mem.Text);
+      d.AddPair('text', tx);
       d.AddPair('day', day);
       Next;
     end;
   end;
-  mem.Free;
   result := TJSONObject.Create;
   result.AddPair('mag', ar);
 end;
