@@ -165,12 +165,10 @@ procedure TDataModule1.createMagId(id: integer; out Data: TJSONObject);
 var
   i: integer;
 begin
-  FDQuery1.SQL.Clear;
-  FDQuery1.SQL.Add('select MAX(magId) as count from mag;');
-  FDQuery1.Open;
-  i := FDQuery1.FieldByName('count').AsInteger + 1;
+  mag.Last;
+  i:=mag.FieldByName('magid').AsInteger+1;
   mag.Append;
-  mag.FieldByName('magId').AsInteger := id;
+  mag.FieldByName('magId').AsInteger := i;
   mag.FieldByName('magNum').AsString := 'MAG' + i.ToString;
   mag.FieldByName('day').AsDateTime := Date;
   mag.FieldByName('lastDay').AsDateTime := Date;
@@ -178,7 +176,8 @@ begin
   mag.FieldByName('comment').AsString := Data.Values['comment'].Value;
   mag.FieldByName('enable').AsString := Data.Values['enable'].Value;
   mag.Post;
-  DB.AppendRecord([id, i, 0]);
+  db.Last;
+  DB.AppendRecord([db.FieldByName('serial').AsInteger+1, id, i, 0]);
 end;
 
 function TDataModule1.createReaderId(Data: TJSONObject): integer;
