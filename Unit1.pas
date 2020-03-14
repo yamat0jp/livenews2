@@ -596,6 +596,7 @@ begin
   v := DB.Lookup('magId',i, 'writerId');
   if VarIsNull(v) = true then
     v := 0;
+  db.Last;
   DB.AppendRecord([db.FieldByName('serial').AsInteger+1, v, i, id]);
 end;
 
