@@ -219,11 +219,19 @@ object WebModule1: TWebModule1
       '    <title>Document</title>'
       '</head>'
       '<body>'
-      '        <p>'#26032#21002#30331#37682
+      '        <h3>'#26032#21002#30331#37682'</h3>'
+      '        <p>'#26360#31821#24773#22577
       '        <form method=post action=/writer/regist>'
+      '                <p>'#12479#12452#12488#12523
+      '                <p>'
       '                <input type=text name=name>'
+      '                <p>'#35500#26126#27396
+      '                <p>'
       '                <input type=text name=comment>'
+      '                <p>'#30330#34892#20104#23450#26085
+      '                <p>'
       '                <input type=text name=day>'
+      '                <p>'
       '                <input type=submit>'
       '        </form>'
       '        <p>'#30331#37682#20013#12398#12510#12460#12472#12531#12391#12377
@@ -276,8 +284,6 @@ object WebModule1: TWebModule1
   end
   object backnumber: TPageProducer
     HTMLDoc.Strings = (
-      '        <p>{{name}}'
-      '        <p>{{comment}}'
       '        {{#data}}'
       '                <hr>'
       '                {{&text}}'
@@ -371,6 +377,9 @@ object WebModule1: TWebModule1
       '        <input type=file name=epub>'
       '        <input type=submit value="'#36865#20449'">'
       '        </form>'
+      '        <h3>'#26360#31821#24773#22577'</h3>'
+      '        <p>{{name}}'
+      '        <p>{{comment}}'
       '        <#main>'
       '</body>'
       '</html>')
@@ -390,6 +399,8 @@ object WebModule1: TWebModule1
       '    <title>Document</title>'
       '</head>'
       '<body>'
+      '        <p>{{name}}'
+      '        <p>{{comment}}'
       '        <#main>'
       '        {{#id}}'
       '        <form method=post action=/reader/select>'

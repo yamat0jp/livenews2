@@ -267,14 +267,14 @@ end;
 procedure TWebModule1.WebModule1selectionAction(Sender: TObject;
   Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
 var
-  id: integer;
+  num: string;
 begin
-  id := DataModule1.magid(Request.ContentFields.Values['name']);
+  num := Request.ContentFields.Values['name'];
   case Request.MethodType of
     mtPost:
-      DataModule1.magIdOn(readerId, id);
+      DataModule1.magIdOn(readerId, num);
     mtDelete:
-      DataModule1.magIdOff(readerId, id);
+      DataModule1.magIdOff(readerId, num);
   end;
   Handled := false;
 end;
@@ -283,9 +283,8 @@ procedure TWebModule1.WebModule1uploadAction(Sender: TObject;
   Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
 var
   num: string;
-
   stream, mem: TStream;
-  data: TJSONObject;
+  sub, data: TJSONObject;
 begin
   num := Request.QueryFields.Values['num'];
   if Request.MethodType = mtPost then
@@ -298,7 +297,6 @@ begin
     mem.Free;
   end;
   Response.ContentType := 'text/html;charset=utf-8';
-  data := TJSONObject.Create;
   DataModule1.backnumber(num, data);
   mustache := TSynMustache.Parse(upload.Content);
   Response.Content := mustache.RenderJSON(data.ToJSON);

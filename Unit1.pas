@@ -61,9 +61,12 @@ type
   private
     { Private êÈåæ }
     function makeTable(Sender: TObject): TJSONObject;
-    procedure magData(id: integer; out Data: TJSONObject);
+    procedure magData(id: integer; out Data: TJSONObject); overload;
+    function magid(name: string): integer;
   public
     { Public êÈåæ }
+    procedure magIdOff(id: integer; magNum: string);
+    procedure magIdOn(id: integer; magNum: string);
     procedure AddMagazine(id: integer; out Data: TJSONObject);
     procedure backNumber(num: string; out Data: TJSONObject);
     function existsMail(mail: string): Boolean;
@@ -81,13 +84,11 @@ type
     procedure viewList(id: integer; out Data: TJSONObject);
     procedure magazines(id: integer; out Data: TJSONObject);
     procedure magListAll(id: integer; out Data: TJSONObject);
-    function magid(name: string): integer;
-    procedure magIdOff(id, magid: integer);
-    procedure magIdOn(id, magid: integer);
     procedure createMagId(id: integer; out Data: TJSONObject);
     procedure postMessage(id: integer; Data: TJSONObject);
     function createWriterId(Data: TJSONObject): integer;
     procedure readerData(id: integer; out Data: TJSONObject);
+    procedure magData(num: string; out data: TJSONObject); overload;
     function titleView(magid, writerId: integer; out Data: TJSONObject)
       : Boolean;
     procedure updateWriterId(id: integer; Data: TJSONObject);
@@ -136,6 +137,8 @@ begin
   Data := TJSONObject.Create;
   ar := TJSONArray.Create;
   Data.AddPair('magnum', num);
+  Data.AddPair('name',mag.FieldByName('magname').AsString);
+  Data.AddPair('comment',mag.FieldByName('comment').AsString);
   Data.AddPair('data', ar);
   with FDQuery1 do
   begin
@@ -578,23 +581,22 @@ begin
     result := v;
 end;
 
-procedure TDataModule1.magIdOff(id, magid: integer);
+procedure TDataModule1.magIdOff(id: integer; magNum: string);
 begin
-  if DB.Locate('readerId;magId', VarArrayOf([id, magid])) = true then
+  if DB.Locate('readerId;magId', VarArrayOf([id, magid(magNum)])) = true then
     DB.Delete;
 end;
 
-procedure TDataModule1.magIdOn(id, magid: integer);
+procedure TDataModule1.magIdOn(id: integer; magnum: string);
 var
   i: integer;
   v: Variant;
 begin
-  v := DB.Lookup('magId', magid, 'writerId');
+  i:=magId(magnum);
+  v := DB.Lookup('magId',i, 'writerId');
   if VarIsNull(v) = true then
     v := 0;
-  FDQuery1.Open('select MAX(serial) as ser from db;');
-  i := FDQuery1.FieldByName('ser').AsInteger + 1;
-  DB.AppendRecord([i, v, magid, id]);
+  DB.AppendRecord([db.FieldByName('serial').AsInteger+1, v, i, id]);
 end;
 
 procedure TDataModule1.magListAll(id: integer; out Data: TJSONObject);
@@ -694,6 +696,11 @@ begin
     val := ar;
   Data := TJSONObject.Create;
   Data.AddPair('mag', val);
+end;
+
+procedure TDataModule1.magData(num: string; out data: TJSONObject);
+begin
+  magData(magid(num),data);
 end;
 
 function TDataModule1.makeTable(Sender: TObject): TJSONObject;
