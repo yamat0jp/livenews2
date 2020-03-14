@@ -79,9 +79,7 @@ type
     procedure deleteMagazine(id: integer);
     procedure deleteNumber(id, num: integer);
     procedure deleteWriter(var id: integer);
-    procedure getView(id, num: integer; out Data: TJSONObject); overload;
-    procedure getView(id: integer; out Data: TJSONObject); overload;
-    procedure viewList(id: integer; out Data: TJSONObject);
+    procedure getView(id, num: integer; out Data: TJSONObject);
     procedure magazines(id: integer; out Data: TJSONObject);
     procedure magListAll(id: integer; out Data: TJSONObject);
     procedure createMagId(id: integer; out Data: TJSONObject);
@@ -136,14 +134,16 @@ begin
     Exit;
   Data := TJSONObject.Create;
   ar := TJSONArray.Create;
-  Data.AddPair('magnum', num);
-  Data.AddPair('name',mag.FieldByName('magname').AsString);
-  Data.AddPair('comment',mag.FieldByName('comment').AsString);
+  data.AddPair('magnum',mag.FieldByName('magnum').AsString);
+  data.AddPair('name',mag.FieldByName('magname').AsString);
+  data.AddPair('comment',mag.FieldByName('comment').AsString);
+  data.AddPair('day',mag.FieldByName('day').AsString);
+  data.AddPair('last',mag.FieldByName('lastday').AsString);
   Data.AddPair('data', ar);
   with FDQuery1 do
   begin
     SQL.Clear;
-    SQL.Add('select files,enabled from news where magId = :id order by day;');
+    SQL.Add('select files,enabled,changed,day from news where magId = :id order by day;');
     ParamByName('id').AsInteger := mag.FieldByName('magId').AsInteger;
     Open;
     while Eof = false do
@@ -154,6 +154,9 @@ begin
         d.AddPair('text', FieldByName('files').AsString)
       else
         d.AddPair('text', con);
+      if FieldByName('changed').AsBoolean = true then
+        d.AddPair('hint','Ç±ÇÃãLéñÇÕïœçXÇ≥ÇÍÇƒÇ¢Ç‹Ç∑');
+      d.AddPair('day',FieldByName('day').AsString);
       Next;
     end;
   end;
@@ -215,7 +218,7 @@ begin
   FDQuery1.ExecSQL
     (tmp + 'reader(readerId int primary key, reader varchar(20), mail varchar(20), password varchar(20));');
   FDQuery1.ExecSQL
-    (tmp + 'news(number int primary key, magId int, newsId int, files mediumtext character set utf8, day date, changed bool, enabled bool);');
+    (tmp + 'news(number int primary key, magId int, newsId int, files mediumtext, day date, changed bool, enabled bool);');
   FDQuery1.ExecSQL
     (tmp + 'image(imgId int primary key, magId int, newsId int, writerId int, name varchar(20), copyright varchar(20), data longblob, encode bool);');
   DB.Open;
@@ -304,11 +307,6 @@ begin
     end;
   Data := TJSONObject.Create;
   Data.AddPair('mag', ar);
-end;
-
-procedure TDataModule1.viewList(id: integer; out Data: TJSONObject);
-begin
-
 end;
 
 procedure TDataModule1.zipFile(id: integer; magNum: string; stream: TStream);
@@ -402,7 +400,7 @@ begin
         inc(imgid);
       end;
     end
-    else if (str2 = '/text') and (str <> '') then
+    else if (str2 = '/text') and (str <> '') and (str <> 'nav.xhtml') and (str <> 'cover.xhtml') then
     begin
       Zip.Read(name, stream, ziph);
       list.LoadFromStream(stream,TEncoding.UTF8);
@@ -483,22 +481,6 @@ begin
     ParamByName('id').AsInteger := id;
     ParamByName('num').AsInteger := num;
   end;
-  FDQuery1.Open;
-  Data := makeTable(FDQuery1);
-end;
-
-procedure TDataModule1.getView(id: integer; out Data: TJSONObject);
-begin
-  if id = 0 then
-    Exit;
-  with FDQuery1.SQL do
-  begin
-    Clear;
-    Add('select magName,writer,changed,news.day,files from db,news,mag,writer');
-    Add(' where db.readerId = :id and db.magId = mag.magId and db.magId = news.magId');
-    Add(' and db.writerId = writer.writerId and enabled = true order by news.day;');
-  end;
-  FDQuery1.ParamByName('id').AsInteger := id;
   FDQuery1.Open;
   Data := makeTable(FDQuery1);
 end;
@@ -653,13 +635,12 @@ end;
 
 procedure TDataModule1.mainView(id: integer; out Data: TJSONObject);
 begin
-  Data := TJSONObject.Create;
   with FDQuery1.SQL do
   begin
     Clear;
-    Add('select nagName,writer,text,day,changed from db,news,mag,writer');
-    Add(' where db.newsId = news.newsId and db.magId = mag.magId and');
-    Add(' db.writerId = writer.writerId and db.reader.id = :id order by day;');
+    Add('select magName,writer,files,news.day,changed from db,news,mag,writer');
+    Add(' where db.magId = news.magId and db.magId = mag.magId and');
+    Add(' db.writerId = writer.writerId and db.readerId = :id order by day;');
   end;
   FDQuery1.ParamByName('id').AsInteger := id;
   FDQuery1.Open;

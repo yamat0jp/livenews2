@@ -259,7 +259,7 @@ var
   data: TJSONObject;
 begin
   Response.ContentType := 'text/html;charset=utf-8';
-  DataModule1.getView(readerId, data);
+  DataModule1.mainView(readerId, data);
   mustache := TSynMustache.Parse(mainView.Content);
   Response.Content := mustache.RenderJSON(data.ToJSON);
 end;

@@ -306,12 +306,9 @@ object WebModule1: TWebModule1
       '        <p>'#12491#12517#12540#12473#12398#25968#12293#12434#12362#27005#12375#12415#12367#12384#12373#12356
       '        {{#mag}}'
       '        <hr>'
-      '                <p>[{{magName}}] ({{day}})'
-      '                <p>by {{writer}}'
+      '                <h4>[{{magName}}] ({{day}})  by {{writer}}</h4>'
       '                {{&text}}'
-      '                {{#changed}}'
-      '                        <p>{{hint}}'
-      '                {{/changed}}'
+      '                <p>{{hint}}'
       '        {{/mag}}'
       '</body>'
       '</html>')
@@ -399,7 +396,7 @@ object WebModule1: TWebModule1
       '    <title>Document</title>'
       '</head>'
       '<body>'
-      '        <p>{{name}}'
+      '        <p>{{name}} \\// '#30331#37682#26085'{{date}} \\// '#26368#32066#26356#26032#26085'{{last}}'
       '        <p>{{comment}}'
       '        <#main>'
       '        {{#id}}'

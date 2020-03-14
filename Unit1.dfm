@@ -84,9 +84,10 @@ object DataModule1: TDataModule1
     Left = 128
     Top = 184
     object newsnumber: TIntegerField
-      AutoGenerateValue = arDefault
       FieldName = 'number'
       Origin = '`number`'
+      ProviderFlags = [pfInUpdate, pfInWhere, pfInKey]
+      Required = True
     end
     object newsmagId: TIntegerField
       AutoGenerateValue = arDefault
